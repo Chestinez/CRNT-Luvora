@@ -5,6 +5,8 @@ const path = require('path');
 // Import route handlers
 const somethingRouter = require('./routers/Something.router');
 const personRouter = require('./routers/Person.router');
+const postRouter = require('./routes/posts/posts.routes');
+const discoveryRouter = require('./routes/discovery/discovery.routes');
 
 const app = express();
 
@@ -20,6 +22,13 @@ app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 app.use('/somethings', somethingRouter);
 app.use('/persons', personRouter);
+// The team's middleware goes before these routes and sets req.user.id.
+app.use(['/api/posts', '/api/discovery'], (_req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
+app.use('/api/posts', postRouter);
+app.use('/api/discovery', discoveryRouter);
 
 // 404 handler — if no route above matched the request,
 // create a 404 error and pass it to the error handler below.
@@ -33,6 +42,12 @@ app.use((req, res, next) => {
 // this as an error handler. 'next' is not used here, so we disable the ESLint rule.
 // eslint-disable-next-line no-unused-vars
 app.use((error, req, res, next) => {
+  if (/^\/api\/(posts|discovery)(\/|$)/i.test(req.path)) {
+    const status = error.status || 500;
+    const message = error.expose ? error.message : 'Could not complete the request.';
+    if (!error.expose) console.error('Luvora API request failed', error.code || status);
+    return res.set('Cache-Control', 'no-store').status(status).json({ error: message });
+  }
   console.error(error);
   const status = error.status || 500;
   res.status(status).json({ error: error.message });
