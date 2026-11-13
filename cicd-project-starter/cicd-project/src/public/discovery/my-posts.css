@@ -1,0 +1,84 @@
+.masthead a {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.post-panel {
+  display: grid;
+  gap: 1rem;
+  margin-block-start: 1.25rem;
+  padding: clamp(1rem, 4vw, 1.75rem);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface);
+}
+
+.post-panel h2 {
+  font-size: 2rem;
+}
+
+.post-panel label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.post-panel input,
+.post-panel textarea,
+.post-panel select,
+button {
+  min-width: 0;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.55rem;
+  font: inherit;
+}
+
+.post-panel textarea {
+  resize: vertical;
+}
+
+button {
+  justify-self: start;
+  background: var(--rose-pink);
+  color: var(--midnight-plum);
+  cursor: pointer;
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--muted-lavender);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.post-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.post-card {
+  padding-block: 1rem;
+  border-top: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+
+.post-card h3,
+.post-card p {
+  margin: 0 0 0.5rem;
+}
+
+.post-card p {
+  white-space: pre-wrap;
+}
+
+.post-card .post-state {
+  color: var(--muted-lavender);
+}
+
+[hidden] {
+  display: none !important;
+}
