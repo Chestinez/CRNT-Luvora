@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>My couple stories | Luvora</title>
+    <link rel="stylesheet" href="./discovery.css" />
+    <link rel="stylesheet" href="./my-posts.css" />
+    <script src="./my-posts.js" defer></script>
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="page-width"><a class="wordmark" href="./">Luvora</a></div>
+    </header>
+    <main class="page-width">
+      <h1>My couple stories</h1>
+      <p id="status" class="intro" role="status">Loading stories…</p>
+      <section id="workspace" hidden aria-label="Manage your stories">
+        <form id="composer" method="post" class="post-panel" hidden>
+          <h2 id="composer-heading">New draft</h2>
+          <label id="relationship-field"
+            >Relationship
+            <select name="relationshipId" required></select
+          ></label>
+          <label>Title <input name="title" maxlength="120" required /></label>
+          <label
+            >Caption <textarea name="caption" rows="5" maxlength="10000" required></textarea>
+          </label>
+          <div class="post-actions">
+            <button type="submit">Save draft</button>
+            <button id="cancel-edit" type="button" class="secondary" hidden>Cancel edit</button>
+          </div>
+        </form>
+        <section class="post-panel" aria-labelledby="review-heading">
+          <h2 id="review-heading">Stories to approve</h2>
+          <p id="review-empty" hidden>No stories waiting for your approval.</p>
+          <div id="review-list"></div>
+        </section>
+        <section class="post-panel" aria-labelledby="saved-heading">
+          <h2 id="saved-heading">Your recent stories</h2>
+          <button id="reload" type="button" class="secondary">Reload stories</button>
+          <p id="empty" hidden>No stories yet.</p>
+          <div id="post-list"></div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

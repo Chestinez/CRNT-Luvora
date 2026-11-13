@@ -1,0 +1,91 @@
+:root {
+  color-scheme: dark;
+  --midnight-plum: #191622;
+  --rose-pink: #f6a4b1;
+  --muted-lavender: #d9b8df;
+  --text: #fff3fa;
+  --surface: #231d2e;
+  --border: #55445c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--midnight-plum);
+  color: var(--text);
+  font-family: Inter, system-ui, sans-serif;
+  line-height: 1.55;
+}
+
+.page-width {
+  width: min(100% - 2.5rem, 52rem);
+  margin-inline: auto;
+}
+
+.masthead {
+  border-bottom: 1px solid var(--border);
+}
+
+.wordmark {
+  margin: 0;
+  padding-block: 1rem;
+  color: var(--rose-pink);
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: 1.75rem;
+  letter-spacing: -0.035em;
+}
+
+main {
+  padding-block: clamp(3rem, 9vw, 6rem) 3rem;
+}
+
+h1,
+h2 {
+  margin: 0;
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+h1 {
+  font-size: clamp(3.25rem, 10vw, 6rem);
+  letter-spacing: -0.065em;
+}
+
+.intro {
+  margin: 0.75rem 0 0;
+  color: var(--muted-lavender);
+  font-size: clamp(1rem, 2vw, 1.15rem);
+}
+
+main a {
+  color: var(--rose-pink);
+}
+
+.discovery-panel {
+  margin-block-start: 1.5rem;
+  padding: clamp(1rem, 4vw, 1.75rem);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--surface);
+}
+
+.discovery-card {
+  padding-block: 1rem;
+  border-top: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+
+.discovery-card h3,
+.discovery-card p {
+  margin: 0;
+}
+
+.discovery-card p {
+  margin-block-start: 0.35rem;
+  white-space: pre-wrap;
+}
