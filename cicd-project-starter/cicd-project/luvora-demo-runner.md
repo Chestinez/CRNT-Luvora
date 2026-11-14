@@ -36,6 +36,8 @@ Open each SQL file below in **SQL Editor** and run the whole file as
 5. For more stories, run `Luvora_Discovery_Expansion_Seed.sql` from the same
    folder as the posts seed. That file lists optional Auth accounts for extra
    profiles and a second couple.
+6. Run `db_Schema_Change_log/04_connections/001_connections.sql`. It adds
+   Talking connections and pauses single-profile browsing for active pairs.
 
 ## Set the database connection
 
@@ -65,15 +67,23 @@ npm run demo
 ```
 
 `npm ci` installs the locked dependencies. Run it for a fresh checkout or
-after dependency changes. `demo:check` checks the connection, the three demo
+after dependency changes. `demo:check` checks the connection, the four demo
 accounts, and the tables and permissions used by the demo. It exits without
 starting any listeners. `demo` runs the same checks and starts the app.
 
-| Account | URL |
-| --- | --- |
-| Maya | [My couple stories](http://127.0.0.1:3101/discovery/my-posts.html) |
-| Ethan | [My couple stories](http://127.0.0.1:3102/discovery/my-posts.html) |
-| Aisha | [Discovery](http://127.0.0.1:3103/discovery/) |
+| Account | URL                                                                |
+| ------- | ------------------------------------------------------------------ |
+| Maya    | [My couple stories](http://127.0.0.1:3101/discovery/my-posts.html) |
+| Ethan   | [My couple stories](http://127.0.0.1:3102/discovery/my-posts.html) |
+| Aisha   | [Discovery](http://127.0.0.1:3103/discovery/)                      |
+| Daniel  | [Discovery](http://127.0.0.1:3104/discovery/)                      |
+
+To try the handshake, use Aisha to save and invite Daniel in **For You**.
+In Daniel's **Connections** tab, accept the received invitation. Both
+accounts should show **Talking**, with **For You** paused and **Stories**
+available. Before accepting, Daniel can also invite Mei to see what happens
+to competing invitations. End the connection on
+either account to resume browsing and see the saved profiles again.
 
 Leave the terminal open while using the demo. Press **Ctrl+C** to stop it.
 If a port is in use, stop the earlier demo process and rerun `npm run demo`.

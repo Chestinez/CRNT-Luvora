@@ -3,11 +3,11 @@ const fields =
 
 function listRelationships(db, viewerId) {
   return db.query(
-    `SELECT r.id, coalesce(partner.display_name, 'Partner') AS partner_name
+    `SELECT r.id, coalesce(public.connection_member_name(
+              CASE WHEN r.user_low = $1 THEN r.user_high ELSE r.user_low END
+            ), 'Partner') AS partner_name
      FROM public.relationships r
-     LEFT JOIN public.discoverable_profiles partner
-       ON partner.user_id = CASE WHEN r.user_low = $1 THEN r.user_high ELSE r.user_low END
-     WHERE r.status = 'active' AND $1 IN (r.user_low, r.user_high)
+     WHERE r.status = 'active' AND r.stage = 'dating' AND $1 IN (r.user_low, r.user_high)
      ORDER BY r.created_at DESC, r.id`,
     [viewerId],
   );
@@ -28,7 +28,8 @@ function createDraft(db, viewerId, { relationshipId, title, caption }) {
     `INSERT INTO public.posts (author_id, relationship_id, title, caption, post_type)
      SELECT $1, r.id, $3, $4, 'relationship'
      FROM public.relationships r
-     WHERE r.id = $2 AND r.status = 'active' AND $1 IN (r.user_low, r.user_high)`,
+     WHERE r.id = $2 AND r.status = 'active' AND r.stage = 'dating'
+       AND $1 IN (r.user_low, r.user_high)`,
     [viewerId, relationshipId, title, caption],
   );
 }
@@ -51,7 +52,7 @@ function publishDraft(db, viewerId, postId, revision) {
        AND btrim(p.title) <> '' AND btrim(p.caption) <> ''
        AND EXISTS (
          SELECT 1 FROM public.relationships r
-         WHERE r.id = p.relationship_id AND r.status = 'active'
+         WHERE r.id = p.relationship_id AND r.status = 'active' AND r.stage = 'dating'
        )
      RETURNING ${fields}`,
     [viewerId, postId, revision],
@@ -72,7 +73,7 @@ function listReviewable(db, viewerId) {
      FROM public.posts p
      JOIN public.relationships r ON r.id = p.relationship_id
      WHERE p.post_type = 'relationship' AND p.status = 'draft'
-       AND r.status = 'active' AND $1 IN (r.user_low, r.user_high)
+       AND r.status = 'active' AND r.stage = 'dating' AND $1 IN (r.user_low, r.user_high)
        AND btrim(p.title) <> '' AND btrim(p.caption) <> ''
        AND NOT EXISTS (
          SELECT 1 FROM public.post_participant_approvals a
@@ -90,7 +91,7 @@ function approveRevision(db, viewerId, postId, revision) {
      SELECT p.id, $1, p.content_revision, 'approved'
      FROM public.posts p JOIN public.relationships r ON r.id = p.relationship_id
      WHERE p.id = $2 AND p.content_revision = $3
-       AND p.status = 'draft' AND p.post_type = 'relationship' AND r.status = 'active'
+       AND p.status = 'draft' AND p.post_type = 'relationship' AND r.status = 'active' AND r.stage = 'dating'
        AND $1 IN (r.user_low, r.user_high) AND btrim(p.title) <> '' AND btrim(p.caption) <> ''
      ON CONFLICT (post_id, user_id, post_revision)
      DO UPDATE SET approval_status = 'approved'`,

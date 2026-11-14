@@ -9,6 +9,7 @@ const demoAccounts = [
   { name: 'Maya', email: 'luvora-maya@example.com', port: 3101 },
   { name: 'Ethan', email: 'luvora-ethan@example.com', port: 3102 },
   { name: 'Aisha', email: 'luvora-aisha@example.com', port: 3103 },
+  { name: 'Daniel', email: 'luvora-daniel@example.com', port: 3104 },
 ];
 
 async function main() {
@@ -33,13 +34,17 @@ async function main() {
       `SELECT to_regclass('public.users') IS NOT NULL AS users,
               to_regclass('public.discoverable_profiles') IS NOT NULL AS profiles,
               to_regclass('public.posts') IS NOT NULL AS posts,
-              to_regclass('public.profile_browse_actions') IS NOT NULL AS actions`,
+              to_regclass('public.profile_browse_actions') IS NOT NULL AS actions,
+              to_regprocedure('public.send_match_request(uuid)') IS NOT NULL AS connections`,
     );
     if (!schema.users || !schema.profiles || !schema.posts) {
       throw new Error('Luvora schema missing. Follow the Supabase setup in luvora-demo-runner.md.');
     }
     if (!schema.actions) {
       throw new Error('Run 001_profile_browse_actions.sql from db_Schema_Change_log.');
+    }
+    if (!schema.connections) {
+      throw new Error('Run 04_connections/001_connections.sql from db_Schema_Change_log.');
     }
 
     const emails = demoAccounts.map(({ email }) => email);
@@ -70,6 +75,7 @@ async function main() {
       await client.query('SELECT user_id FROM public.discoverable_profiles LIMIT 0');
       await client.query('SELECT id FROM public.posts LIMIT 0');
       await client.query('SELECT viewer_id FROM public.profile_browse_actions LIMIT 0');
+      await client.query('SELECT public.profile_browsing_state()');
     });
 
     if (checkOnly) {
@@ -102,7 +108,7 @@ async function main() {
       });
       servers.push(server);
       console.log(
-        `${name.padEnd(5)}  http://${host}${name === 'Aisha' ? '/discovery/' : '/discovery/my-posts.html'}`,
+        `${name.padEnd(6)}  http://${host}${port < 3103 ? '/discovery/my-posts.html' : '/discovery/'}`,
       );
     }
   } catch (error) {

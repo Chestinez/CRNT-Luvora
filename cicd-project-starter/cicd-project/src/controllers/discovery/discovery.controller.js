@@ -18,6 +18,48 @@ async function listCoupleStories(req, res) {
   res.json(await discovery.listCoupleStories(getViewerId(req)));
 }
 
+function requireJson(req) {
+  if (!req.is('application/json')) throw createError(415, 'Send an application/json request.');
+}
+
+function requireId(id) {
+  if (typeof id !== 'string' || !uuid.test(id)) throw createError(400, 'Choose a valid ID.');
+  return id.toLowerCase();
+}
+
+async function listConnections(req, res) {
+  res.json(await discovery.listConnections(getViewerId(req)));
+}
+
+async function sendConnectionRequest(req, res) {
+  const viewerId = getViewerId(req);
+  requireJson(req);
+  const targetId = requireId(req.body?.targetId);
+  res.json(await discovery.sendConnectionRequest(viewerId, targetId));
+}
+
+async function respondToConnectionRequest(req, res) {
+  const viewerId = getViewerId(req);
+  requireJson(req);
+  const requestId = requireId(req.params.requestId);
+  const actions = { accept: 'accepted', decline: 'rejected', withdraw: 'cancelled' };
+  const { action } = req.params;
+  if (!Object.hasOwn(actions, action)) throw createError(400, 'Choose a valid invitation action.');
+  await discovery.respondToConnectionRequest(viewerId, requestId, actions[action]);
+  res.status(204).end();
+}
+
+async function endConnection(req, res) {
+  const viewerId = getViewerId(req);
+  requireJson(req);
+  await discovery.endConnection(
+    viewerId,
+    requireId(req.params.connectionId),
+    requireId(req.body?.requestId),
+  );
+  res.status(204).end();
+}
+
 async function changeProfileAction(req, res) {
   const viewerId = getViewerId(req);
   const { profileId, action } = req.params;
@@ -28,9 +70,7 @@ async function changeProfileAction(req, res) {
     throw createError(400, 'You cannot save or hide your own profile.');
   }
   // Requiring JSON keeps these mutations out of cross-origin HTML form submissions.
-  if (!req.is('application/json')) {
-    throw createError(415, 'Send an application/json request.');
-  }
+  requireJson(req);
 
   if (req.method === 'PUT') {
     await discovery.addProfileAction(viewerId, profileId, action);
@@ -46,4 +86,8 @@ module.exports = {
   listHiddenProfiles,
   listCoupleStories,
   changeProfileAction,
+  listConnections,
+  sendConnectionRequest,
+  respondToConnectionRequest,
+  endConnection,
 };
