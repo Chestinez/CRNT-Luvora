@@ -236,8 +236,26 @@
   font-size: 0.78rem;
 }
 
-.profile-stories {
+.profile-card-actions,
+.profile-feedback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profile-card-actions {
   margin-block-start: 1rem;
+}
+
+.profile-save[data-saved='true'] {
+  border-color: var(--rose-pink);
+  color: var(--rose-pink);
+}
+
+.feed-control:disabled {
+  opacity: 0.65;
+  cursor: wait;
 }
 
 .story-card {

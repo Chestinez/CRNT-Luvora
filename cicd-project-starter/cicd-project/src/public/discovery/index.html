@@ -43,8 +43,22 @@
 
       <section id="profiles-panel" role="tabpanel" aria-labelledby="profiles-tab" tabindex="0">
         <div class="feed-toolbar">
-          <h2>Discover people</h2>
+          <h2 id="profiles-heading">Discover people</h2>
+          <label class="story-filter">
+            Show
+            <select id="profile-list">
+              <option value="profiles">For You</option>
+              <option value="saved">Saved profiles</option>
+              <option value="hidden">Hidden profiles</option>
+            </select>
+          </label>
           <p id="profiles-count" class="feed-count"></p>
+        </div>
+        <div id="profile-feedback" class="profile-feedback" hidden>
+          <p id="profile-action-status" class="feed-status" role="status"></p>
+          <button class="feed-control" id="undo-profile-hide" type="button" hidden>
+            Undo hide
+          </button>
         </div>
         <p id="profiles-status" class="feed-status" role="status">Loading profiles…</p>
         <button class="feed-control" type="button" data-retry="profiles" hidden>Retry</button>
@@ -75,7 +89,11 @@
           <p class="card-bio"></p>
           <dl class="profile-facts"></dl>
           <ul class="feed-tags" aria-label="Interests"></ul>
-          <button class="feed-control profile-stories" type="button">View stories</button>
+          <div class="profile-card-actions">
+            <button class="feed-control profile-stories" type="button">View stories</button>
+            <button class="feed-control profile-save" type="button">Save</button>
+            <button class="feed-control profile-hide" type="button">Hide</button>
+          </div>
         </div>
       </article>
     </template>

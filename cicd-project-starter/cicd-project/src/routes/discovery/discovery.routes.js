@@ -3,6 +3,10 @@ const controller = require('../../controllers/discovery/discovery.controller');
 
 const router = express.Router();
 router.get('/profiles', controller.listProfiles);
+router.get('/profiles/saved', controller.listSavedProfiles);
+router.get('/profiles/hidden', controller.listHiddenProfiles);
+router.put('/profiles/:profileId/:action', controller.changeProfileAction);
+router.delete('/profiles/:profileId/:action', controller.changeProfileAction);
 router.get('/couple-stories', controller.listCoupleStories);
 
 module.exports = router;

@@ -15,6 +15,8 @@ app.use('/api/discovery', teamAuthMiddleware, discoveryRouter);
 
 ## PostgreSQL setup
 
+For local demo accounts and npm commands, see [Run the Luvora demo](luvora-demo-runner.md).
+
 From Supabase **Connect**, choose **Session pooler** and copy the PostgreSQL
 URI on port 5432. Replace the password placeholder with the database password.
 Percent-encode reserved characters in the password. Put the URI in
@@ -40,7 +42,7 @@ transaction ends.
 
 | Method and route | Purpose |
 | --- | --- |
-| GET /api/discovery/profiles | Up to 30 eligible profiles, excluding the viewer |
+| GET /api/discovery/profiles | Up to 30 eligible profiles, excluding the viewer and hidden profiles |
 | GET /api/discovery/couple-stories | Up to 30 visible published couple stories, newest first |
 | GET /api/posts/relationships | Relationships the viewer can use to create a draft |
 | GET /api/posts | View the viewer's 50 most recently updated couple stories |
@@ -59,3 +61,25 @@ Profile cards read the existing `discoverable_profiles` view. Couple stories
 read the existing `posts` table under its RLS policy. The first version uses
 separate lists and fixed limits. Ranking can consume these content sources once
 the matching and story-ranking rules are implemented.
+
+## Profile browsing actions
+
+Run `db_Schema_Change_log/03_profile_actions_table/001_profile_browse_actions.sql` in the existing
+Supabase database before starting this version. It adds a private state table.
+No extra seed is needed. The demo accounts start with empty lists.
+
+| Method and route | Purpose |
+| --- | --- |
+| GET /api/discovery/profiles/saved | List currently visible bookmarked profiles |
+| GET /api/discovery/profiles/hidden | List currently visible profiles hidden from For You |
+| PUT /api/discovery/profiles/:profileId/:action | Add a bookmark or hide |
+| DELETE /api/discovery/profiles/:profileId/:action | Remove a bookmark or restore a hidden profile |
+
+Use `saved` or `hidden` for `:action` and send an empty JSON object for mutations.
+The server gets the viewer from `req.user.id`. Adding an action for an unavailable
+profile returns 404. Repeat writes for a visible profile and repeat deletes
+return 204. Hidden profiles are excluded only from For You. Both lists apply
+the same visibility rules as For You. Saves and hides are independent.
+
+The table records which actions are active now. Historical feedback and
+ranking are separate work. The feature does not write `interaction_events`.
