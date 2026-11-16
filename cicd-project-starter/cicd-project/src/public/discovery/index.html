@@ -26,7 +26,7 @@
           aria-selected="true"
           aria-controls="profiles-panel"
         >
-          For You
+          Profiles
         </button>
         <button
           id="stories-tab"
@@ -65,12 +65,53 @@
             <label class="story-filter">
               Show
               <select id="profile-list">
-                <option value="profiles">For You</option>
+                <option value="compatibility">Compatibility</option>
                 <option value="saved">Saved profiles</option>
                 <option value="hidden">Hidden profiles</option>
               </select>
             </label>
             <p id="profiles-count" class="feed-count"></p>
+          </div>
+          <div id="compatibility-controls">
+            <label class="match-toggle">
+              <input id="show-match-details" type="checkbox" aria-controls="match-filters" />
+              Show scores and filters
+            </label>
+            <form id="match-filters" class="match-filters" hidden>
+              <label>
+                Rank by
+                <select name="order">
+                  <option value="alignment">Strongest mutual fit</option>
+                  <option value="shared">Most shared interests</option>
+                </select>
+              </label>
+              <label>
+                Minimum alignment
+                <select name="minScore">
+                  <option value="0">Any score</option>
+                  <option value="50">50%</option>
+                  <option value="65">65%</option>
+                  <option value="80">80%</option>
+                  <option value="90">90%</option>
+                </select>
+              </label>
+              <label>
+                Minimum age
+                <input name="minAge" type="number" min="18" max="120" placeholder="18" />
+              </label>
+              <label>
+                Maximum age
+                <input name="maxAge" type="number" min="18" max="120" placeholder="120" />
+              </label>
+              <label class="match-toggle">
+                <input name="sharedOnly" type="checkbox" value="true" />
+                At least one shared interest
+              </label>
+              <div class="match-filter-actions">
+                <button class="feed-control" type="submit">Apply filters</button>
+                <button class="feed-control" type="reset">Reset filters</button>
+              </div>
+            </form>
           </div>
           <div id="profile-feedback" class="profile-feedback" hidden>
             <p id="profile-action-status" class="feed-status" role="status"></p>
@@ -81,6 +122,10 @@
           <p id="profiles-status" class="feed-status" role="status">Loading profiles…</p>
           <button class="feed-control" type="button" data-retry="profiles" hidden>Retry</button>
           <div id="profiles" class="feed-grid"></div>
+          <button class="feed-control" id="more-profiles" type="button" hidden>
+            Load more profiles
+          </button>
+          <p id="profiles-page-status" class="feed-status" role="status"></p>
         </div>
       </section>
 

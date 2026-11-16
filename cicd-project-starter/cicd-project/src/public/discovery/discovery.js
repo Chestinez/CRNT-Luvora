@@ -1,5 +1,9 @@
 const profileLists = {
-  profiles: { heading: 'Discover people', path: '', empty: 'No profiles available.' },
+  compatibility: {
+    heading: 'Compatibility',
+    path: '/compatibility',
+    empty: 'No eligible profiles match both people’s requirements.',
+  },
   saved: {
     heading: 'Saved profiles',
     path: '/saved',
@@ -17,6 +21,11 @@ const feeds = {
 };
 const tabs = [...document.querySelectorAll('[role="tab"]')];
 const profileList = document.querySelector('#profile-list');
+const compatibilityControls = document.querySelector('#compatibility-controls');
+const showMatchDetails = document.querySelector('#show-match-details');
+const matchFilters = document.querySelector('#match-filters');
+const moreProfiles = document.querySelector('#more-profiles');
+const profilePageStatus = document.querySelector('#profiles-page-status');
 const profileFeedback = document.querySelector('#profile-feedback');
 const profileActionStatus = document.querySelector('#profile-action-status');
 const undoButton = document.querySelector('#undo-profile-hide');
@@ -34,6 +43,8 @@ let changingProfileAction = false;
 let connectionState = null;
 let connectionRead;
 let changingConnection = false;
+let nextCompatibilityPage = null;
+let appliedMatchFilters = new URLSearchParams();
 
 function readableLabel(value) {
   return value.replaceAll(/[_-]+/g, ' ').replace(/^./, (letter) => letter.toUpperCase());
@@ -71,6 +82,18 @@ function renderProfile(profile, listName) {
   const bio = card.querySelector('.card-bio');
   bio.textContent = profile.bio || '';
   bio.hidden = !profile.bio;
+  if (listName === 'compatibility' && showMatchDetails.checked) {
+    const details = document.createElement('p');
+    details.className = 'profile-match-details';
+    const alignment =
+      profile.alignment === null
+        ? 'Limited match data'
+        : `${profile.alignment}% preference alignment`;
+    const shared =
+      profile.shared_count === 1 ? '1 shared interest' : `${profile.shared_count} shared interests`;
+    details.textContent = `${alignment} · ${shared}`;
+    bio.before(details);
+  }
   const facts = card.querySelector('.profile-facts');
   const code = profile.region_code;
   const location = /^[A-Za-z]{2}$/.test(code ?? '') ? regionNames.of(code.toUpperCase()) : code;
@@ -158,6 +181,9 @@ function showBrowsingPause() {
   if (!paused) return;
   feeds.profiles.request?.abort();
   document.querySelector('#profiles').replaceChildren();
+  nextCompatibilityPage = null;
+  moreProfiles.hidden = true;
+  profilePageStatus.textContent = '';
   lastHiddenProfile = null;
   profileFeedback.hidden = true;
   document.querySelector('#profiles-paused-message').textContent =
@@ -426,10 +452,10 @@ async function changeProfileAction(profile, action, enable) {
       if (!response.ok) throw new Error('Profile action failed');
       if (action === 'hidden' && enable) {
         lastHiddenProfile = profile;
-        showProfileFeedback(`Hidden ${profile.display_name} from For You.`);
+        showProfileFeedback(`Hidden ${profile.display_name} from recommendations.`);
       } else if (action === 'hidden') {
         if (lastHiddenProfile?.user_id === profile.user_id) lastHiddenProfile = null;
-        showProfileFeedback(`Restored ${profile.display_name} to For You.`);
+        showProfileFeedback(`Restored ${profile.display_name} to recommendations.`);
       } else {
         showProfileFeedback(
           enable
@@ -498,7 +524,7 @@ function setStories(rows) {
   renderStories();
 }
 
-async function loadFeed(name) {
+async function loadFeed(name, nextPage = null) {
   if (name === 'profiles' && connectionState?.browsing === 'paused') return;
   const feed = feeds[name];
   feed.request?.abort();
@@ -506,49 +532,112 @@ async function loadFeed(name) {
   feed.request = request;
   const listName = profileList.value;
   const profileView = profileLists[listName];
+  const isProfiles = name === 'profiles';
+  const isCompatibility = isProfiles && listName === 'compatibility';
   const status = document.querySelector(`#${name}-status`);
   const retry = document.querySelector(`[data-retry="${name}"]`);
   const list = document.querySelector(`#${name}`);
   const count = document.querySelector('#profiles-count');
-  status.hidden = false;
-  status.textContent = name === 'profiles' ? 'Loading profiles…' : 'Loading stories…';
-  retry.hidden = true;
-  list.replaceChildren();
-  if (name === 'profiles') {
-    count.textContent = '';
+
+  if (!nextPage) {
+    status.hidden = false;
+    status.textContent = isProfiles ? 'Loading profiles.' : 'Loading stories.';
+    retry.hidden = true;
+    list.replaceChildren();
+  }
+  if (isProfiles) {
+    compatibilityControls.hidden = !isCompatibility;
+    moreProfiles.disabled = Boolean(nextPage);
+    profilePageStatus.textContent = '';
+    if (!nextPage) {
+      count.textContent = '';
+      moreProfiles.hidden = true;
+      nextCompatibilityPage = null;
+    }
     document.querySelector('#profiles-heading').textContent = profileView.heading;
-  } else document.querySelector('#story-filter').hidden = true;
+  } else {
+    document.querySelector('#story-filter').hidden = true;
+  }
+
   try {
-    const url = name === 'profiles' ? feed.url + profileView.path : feed.url;
+    const baseUrl = isProfiles ? feed.url + profileView.path : feed.url;
+    const query = nextPage
+      ? new URLSearchParams(nextPage)
+      : isCompatibility
+        ? appliedMatchFilters
+        : '';
+    const url = query.toString() ? `${baseUrl}?${query}` : baseUrl;
     const response = await fetch(url, { signal: request.signal });
     if (request.signal.aborted) return;
-    if (response.status === 401) {
-      status.textContent = 'Sign in to view this section.';
+
+    if (response.status === 401 || (isProfiles && response.status === 403)) {
+      const message =
+        response.status === 401 ? 'Sign in to view this section.' : (await response.json()).error;
+      if (request.signal.aborted) return;
+      status.hidden = false;
+      status.textContent = message;
+      list.replaceChildren();
+      if (isProfiles) {
+        count.textContent = '';
+        moreProfiles.hidden = true;
+        nextCompatibilityPage = null;
+        if (response.status === 403 && !changingConnection && !connectionRead) {
+          void loadConnections({ quiet: true });
+        }
+      }
       return;
     }
-    if (name === 'profiles' && response.status === 403) {
-      status.textContent = (await response.json()).error;
-      if (!changingConnection && !connectionRead) void loadConnections({ quiet: true });
+    if (nextPage && response.status === 410) {
+      profilePageStatus.textContent = 'This list has expired.';
+      moreProfiles.textContent = 'Reload Compatibility';
+      nextCompatibilityPage = null;
+      return;
+    }
+    if (isCompatibility && response.status === 400) {
+      const { error } = await response.json();
+      if (!request.signal.aborted) status.textContent = error;
       return;
     }
     if (!response.ok) throw new Error('Feed request failed');
-    const rows = await response.json();
+    const result = await response.json();
     if (request.signal.aborted) return;
 
     if (name === 'stories') {
-      setStories(rows);
-    } else {
-      list.replaceChildren(...rows.map((profile) => renderProfile(profile, listName)));
-      status.hidden = rows.length > 0;
-      status.textContent = profileView.empty;
-      count.textContent = rows.length === 1 ? '1 profile' : `${rows.length} profiles`;
+      setStories(result);
+      return;
     }
+    const rows = isCompatibility ? result.profiles : result;
+    const cards = rows.map((profile) => renderProfile(profile, listName));
+    const firstNewHeading = nextPage ? cards[0]?.querySelector('h3') : null;
+    list.append(...cards);
+    const shown = list.childElementCount;
+    status.hidden = shown > 0;
+    status.textContent =
+      isCompatibility && appliedMatchFilters.size
+        ? 'No profiles match your current filters.'
+        : profileView.empty;
+    count.textContent = shown === 1 ? '1 profile' : `${shown} profiles`;
+    nextCompatibilityPage = isCompatibility ? result.next : null;
+    moreProfiles.textContent = 'Load more profiles';
+    moreProfiles.hidden = !nextCompatibilityPage;
+    if (firstNewHeading && [document.body, moreProfiles].includes(document.activeElement)) {
+      firstNewHeading.tabIndex = -1;
+      firstNewHeading.focus();
+    }
+    if (nextPage && !rows.length) profilePageStatus.textContent = 'No more eligible profiles.';
   } catch {
     if (request.signal.aborted) return;
-    status.textContent = 'Could not load this section.';
-    retry.hidden = false;
+    if (nextPage) {
+      profilePageStatus.textContent = 'Could not load more profiles. Try again.';
+    } else {
+      status.textContent = 'Could not load this section.';
+      retry.hidden = false;
+    }
   } finally {
-    if (feed.request === request) feed.request = null;
+    if (feed.request === request) {
+      feed.request = null;
+      if (isProfiles) moreProfiles.disabled = false;
+    }
   }
 }
 
@@ -587,6 +676,29 @@ for (const button of document.querySelectorAll('[data-retry]')) {
   button.addEventListener('click', () => loadFeed(button.dataset.retry));
 }
 profileList.addEventListener('change', () => loadFeed('profiles'));
+showMatchDetails.addEventListener('change', () => {
+  matchFilters.hidden = !showMatchDetails.checked;
+  if (showMatchDetails.checked) {
+    void loadFeed('profiles');
+  } else {
+    matchFilters.reset();
+  }
+});
+matchFilters.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const values = new FormData(matchFilters);
+  if (Number(values.get('minAge') || 18) > Number(values.get('maxAge') || 120)) {
+    profilePageStatus.textContent = 'Minimum age must be at most the maximum age.';
+    return;
+  }
+  appliedMatchFilters = new URLSearchParams([...values].filter(([, value]) => value !== ''));
+  void loadFeed('profiles');
+});
+matchFilters.addEventListener('reset', () => {
+  appliedMatchFilters = new URLSearchParams();
+  void loadFeed('profiles');
+});
+moreProfiles.addEventListener('click', () => loadFeed('profiles', nextCompatibilityPage));
 undoButton.addEventListener('click', () => {
   if (lastHiddenProfile) changeProfileAction(lastHiddenProfile, 'hidden', false);
 });

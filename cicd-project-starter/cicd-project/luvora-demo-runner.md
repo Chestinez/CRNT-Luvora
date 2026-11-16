@@ -38,6 +38,16 @@ Open each SQL file below in **SQL Editor** and run the whole file as
    profiles and a second couple.
 6. Run `db_Schema_Change_log/04_connections/001_connections.sql`. It adds
    Talking connections and pauses single-profile browsing for active pairs.
+7. Run `db_Schema_Change_log/05_compatibility/001_structured_compatibility.sql`.
+   It adds the ranked Compatibility list.
+8. Run `db_Schema_Change_log/05_compatibility/002_compatibility_filters.sql`.
+   If you already applied step 7, start here.
+9. In your development database, run
+   `db_Schema_Change_log/05_compatibility/Luvora_Compatibility_Demo_Seed.sql`.
+   This optional seed adds 80 fictional profiles with varied ages, interests,
+   regions, and goals. Run it directly in SQL Editor. The seed creates its
+   own placeholder Auth rows, so you can browse them from the existing Aisha
+   and Daniel demo sessions. Reruns skip existing fixtures.
 
 ## Set the database connection
 
@@ -78,7 +88,15 @@ starting any listeners. `demo` runs the same checks and starts the app.
 | Aisha   | [Discovery](http://127.0.0.1:3103/discovery/)                      |
 | Daniel  | [Discovery](http://127.0.0.1:3104/discovery/)                      |
 
-To try the handshake, use Aisha to save and invite Daniel in **For You**.
+To test ranking, open the Discovery link for Aisha or Daniel. Compatibility
+is the default list. Turn on **Show scores and filters**, then try
+**Most shared interests**, a narrower age range, or **At least one shared
+interest**. Choose **Apply filters** to refresh the ranked list. Use **Reset
+filters** to return to the default ranking and try **Load more profiles**.
+
+To try the handshake, open Aisha’s Compatibility list with the default
+filters and find Daniel by name. Use **Load more profiles** if needed,
+then save and invite him from his card.
 In Daniel's **Connections** tab, accept the received invitation. Both
 accounts should show **Talking**, with **For You** paused and **Stories**
 available. Before accepting, Daniel can also invite Mei to see what happens

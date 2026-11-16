@@ -6,6 +6,29 @@ async function listProfiles(req, res) {
   res.json(await discovery.listProfiles(getViewerId(req)));
 }
 
+async function listCompatibleProfiles(req, res) {
+  const viewerId = getViewerId(req);
+  const { snapshot, after, order, minScore, sharedOnly, minAge, maxAge } = req.query;
+  if (snapshot === undefined && after === undefined) {
+    res.json(
+      await discovery.listCompatibleProfiles(viewerId, null, 0, {
+        order,
+        minScore,
+        sharedOnly,
+        minAge,
+        maxAge,
+      }),
+    );
+    return;
+  }
+  if (typeof after !== 'string' || !/^[1-9]\d{0,9}$/.test(after) || Number(after) > 2147483647) {
+    throw createError(400, 'Choose a valid Compatibility page.');
+  }
+  res.json(
+    await discovery.listCompatibleProfiles(viewerId, requireId(snapshot), Number(after), {}),
+  );
+}
+
 async function listSavedProfiles(req, res) {
   res.json(await discovery.listActionProfiles(getViewerId(req), 'saved'));
 }
@@ -82,6 +105,7 @@ async function changeProfileAction(req, res) {
 
 module.exports = {
   listProfiles,
+  listCompatibleProfiles,
   listSavedProfiles,
   listHiddenProfiles,
   listCoupleStories,

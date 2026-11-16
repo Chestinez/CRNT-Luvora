@@ -23,6 +23,31 @@ function listProfiles(viewerId) {
   });
 }
 
+async function listCompatibleProfiles(viewerId, snapshotId, position, options) {
+  try {
+    return await withProfileBrowsing(viewerId, async (db) => {
+      const { rows } = await model.listCompatibleProfiles(db, snapshotId, position, options);
+      const page = rows.slice(0, pageSize);
+      const last = page.at(-1);
+      return {
+        profiles: page.map((row) => {
+          const profile = { ...row };
+          delete profile.snapshot_id;
+          delete profile.item_position;
+          return profile;
+        }),
+        next:
+          rows.length > pageSize ? { snapshot: last.snapshot_id, after: last.item_position } : null,
+      };
+    });
+  } catch (error) {
+    if (error.code === 'LV400') throw createError(400, error.message);
+    if (error.code === 'LV410') throw createError(410, error.message);
+    if (error.code === 'LV403') throw createError(403, error.message);
+    throw error;
+  }
+}
+
 function listActionProfiles(viewerId, action) {
   return withProfileBrowsing(viewerId, async (db) => {
     const { rows } = await model.listActionProfiles(db, viewerId, action);
@@ -87,6 +112,7 @@ function listCoupleStories(viewerId) {
 
 module.exports = {
   listProfiles,
+  listCompatibleProfiles,
   listActionProfiles,
   addProfileAction,
   removeProfileAction,

@@ -11,7 +11,7 @@ function listProfiles(db, viewerId, limit) {
      FROM public.discoverable_profiles p
      LEFT JOIN public.profile_browse_actions saved
        ON saved.viewer_id = $1 AND saved.target_user_id = p.user_id AND saved.action = 'saved'
-     WHERE p.user_id <> $1
+     WHERE public.can_match_users($1, p.user_id)
        AND NOT EXISTS (
          SELECT 1 FROM public.profile_browse_actions hidden
          WHERE hidden.viewer_id = $1 AND hidden.target_user_id = p.user_id AND hidden.action = 'hidden'
@@ -19,6 +19,17 @@ function listProfiles(db, viewerId, limit) {
      ORDER BY p.display_name, p.user_id
      LIMIT $2`,
     [viewerId, limit],
+  );
+}
+
+function listCompatibleProfiles(db, snapshotId, position, options) {
+  return db.query(
+    `SELECT ${profileFields}, page.is_saved, page.snapshot_id, page.item_position,
+            page.alignment, page.shared_count
+     FROM public.list_compatible_profiles($1, $2, $3) AS page
+     CROSS JOIN LATERAL (SELECT (page.profile).*) AS p
+     ORDER BY page.item_position`,
+    [snapshotId, position, options],
   );
 }
 
@@ -131,6 +142,7 @@ function endConnection(db, connectionId, requestId) {
 module.exports = {
   browsingState,
   listProfiles,
+  listCompatibleProfiles,
   listActionProfiles,
   addProfileAction,
   removeProfileAction,
