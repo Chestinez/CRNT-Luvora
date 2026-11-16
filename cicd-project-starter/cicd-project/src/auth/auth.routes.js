@@ -2,7 +2,9 @@ const express = require('express');
 const createError = require('http-errors');
 const supabase = require('./supabase');
 const { validateCredentials } = require('./validation');
-const { authenticate, sameOrigin, readToken, setSession, clearSession } = require('./session');
+const { identify, sameOrigin, readToken, setSession, clearSession } = require('./session');
+const { assurance } = require('./assurance');
+const createMfaRouter = require('./mfa.routes');
 
 function publicUser(user) {
   return {
@@ -29,6 +31,8 @@ function createAuthRouter() {
     }
     next();
   });
+
+  router.use('/mfa', createMfaRouter());
 
   function limitAttempts(req, res, next) {
     const now = Date.now();
@@ -93,17 +97,24 @@ function createAuthRouter() {
       // A failed profile write does not lose an account that Auth already created.
       // Retry this idempotent update on the next login.
       let profilePending = false;
-      try {
-        await supabase.saveSignupDate(result.user, result.access_token);
-      } catch {
-        profilePending = true;
+      const { mfaRequired } = assurance(result.user, result.access_token);
+      if (!mfaRequired) {
+        try {
+          await supabase.saveSignupDate(result.user, result.access_token);
+        } catch {
+          profilePending = true;
+        }
       }
       setSession(res, result);
-      return res.status(signup ? 201 : 200).json({ user: publicUser(result.user), profilePending });
+      return res
+        .status(signup ? 201 : 200)
+        .json({ user: publicUser(result.user), profilePending, mfaRequired });
     });
   }
 
-  router.get('/me', authenticate, (req, res) => res.json({ user: publicUser(req.user) }));
+  router.get('/me', identify, (req, res) =>
+    res.json({ user: publicUser(req.user), ...req.authState }),
+  );
   router.post('/logout', async (req, res) => {
     const token = readToken(req);
     // Clear the browser session even if the provider is temporarily unavailable.

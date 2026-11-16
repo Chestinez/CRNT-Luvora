@@ -1,6 +1,7 @@
 const createError = require('http-errors');
 const supabase = require('./supabase');
 const { uuid } = require('../controllers/viewer');
+const { assurance } = require('./assurance');
 const cookieName = 'luvora_access';
 
 function cookieOptions() {
@@ -59,10 +60,7 @@ function sameOrigin(req, _res, next) {
   next();
 }
 
-async function authenticate(req, res, next) {
-  // Preserve identities established by trusted upstream server middleware,
-  // including the existing loopback-only demo runner. Never read IDs from headers.
-  if (uuid.test(req.user?.id || '')) return next();
+async function identify(req, res, next) {
   const token = readToken(req);
   if (!token) return next(createError(401, 'Please log in to continue.'));
   try {
@@ -70,6 +68,7 @@ async function authenticate(req, res, next) {
     const user = await supabase.request('/auth/v1/user', { token });
     if (!uuid.test(user.id || '')) throw createError(401, 'Please log in again.');
     req.user = user;
+    req.authState = assurance(user, token);
     next();
   } catch (error) {
     if ([400, 401, 403].includes(error.status)) {
@@ -80,4 +79,28 @@ async function authenticate(req, res, next) {
   }
 }
 
-module.exports = { authenticate, sameOrigin, readToken, setSession, clearSession };
+function requireMfa(req, res, next) {
+  if (req.authState?.mfaRequired) {
+    return res
+      .status(403)
+      .json({ code: 'MFA_REQUIRED', error: 'Enter your authenticator code to finish logging in.' });
+  }
+  next();
+}
+
+function authenticate(req, res, next) {
+  // Preserve the existing loopback-only demo runner's trusted server identity.
+  // MFA management always uses identify(), which requires a real Supabase cookie.
+  if (uuid.test(req.user?.id || '') && !req.authState) return next();
+  return identify(req, res, (error) => (error ? next(error) : requireMfa(req, res, next)));
+}
+
+module.exports = {
+  authenticate,
+  identify,
+  requireMfa,
+  sameOrigin,
+  readToken,
+  setSession,
+  clearSession,
+};

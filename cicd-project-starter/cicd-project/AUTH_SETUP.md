@@ -79,7 +79,49 @@ Use `NODE_ENV=production` and HTTPS in production so session cookies are Secure.
 - Provider/network errors are sanitized. Duplicate signup gets a neutral
   confirmation response where Supabase reports an existing account.
 - DOB checking is self-reported age gating, not identity/age verification.
-- Password recovery, social login, and MFA are outside this feature.
+- Password recovery and social login are outside this feature.
+
+## Two-factor authentication (2FA)
+
+Supabase's built-in TOTP MFA is used; no SQL, tables, schema, or dependencies
+are added. In the Supabase Auth MFA settings, ensure **TOTP enrollment and
+verification** are enabled. The existing URL and publishable/anon key are sufficient.
+No service-role key is used.
+
+1. Start the app, log in, and select **Add two-factor authentication** on the
+   account page (or open `/auth/security.html`).
+2. Select **Set up authenticator**, scan the QR in a TOTP authenticator app, or
+   enter the setup key manually. Keep access to the app or its secure backup.
+3. Enter the current six-digit code to activate 2FA. Until verified, setup is
+   pending and does not lock the account out. Cancel removes the pending factor;
+   restarting after a reload replaces only Luvora's unfinished enrollment.
+4. Log out, then log in again. A verified code is now required before accessing
+   the account page, posts, or discovery APIs. Password-only sessions may only
+   inspect their identity/security status, verify the existing factor, or log out.
+5. To remove an authenticator, open Account security, choose **Remove an
+   authenticator**, and enter a fresh code. Removal signs out this browser.
+
+The server validates each session with Supabase before reading its JWT assurance
+claim. Enrolled accounts require `aal2`; unverified enrollments cannot be used to
+bypass an existing factor. The elevated token replaces the HttpOnly cookie.
+Secrets and codes are not logged, persisted in browser storage, or placed in URLs.
+MFA mutations are limited to 10 per account per 10 minutes in this server process,
+in addition to Supabase limits. Multiple app instances need a shared limiter.
+
+Enforcement covers this Express app's authenticated routes. Existing database RLS
+policies remain unchanged: they do not add an `aal2` requirement for direct
+Supabase Data API callers. Database-wide MFA enforcement must be coordinated with
+the team separately. The local demo runner still uses its existing simulated
+identity; test real 2FA through `npm.cmd start`, not `npm.cmd run demo`.
+
+If an authenticator is lost, there is no password-only disable button or recovery
+bypass. Use the authenticator's backup, or have the project owner verify the
+account holder before removing the lost factor through Supabase's administrative
+tools. Recovery codes, SMS and email OTP are not implemented in this feature.
+The UI supports TOTP; an account with only a different verified factor is blocked
+with recovery guidance rather than allowed through.
+
+Reference: [Supabase authenticator MFA](https://supabase.com/docs/guides/auth/auth-mfa/totp).
 
 ## Safe checks
 

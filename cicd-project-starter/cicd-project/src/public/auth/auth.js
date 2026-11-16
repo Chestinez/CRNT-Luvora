@@ -134,6 +134,10 @@ if (form) {
         showStatus('One more step: confirm your email, then log in.', false, true);
       } else {
         form.reset();
+        if (data.mfaRequired) {
+          window.location.assign('/auth/security.html');
+          return;
+        }
         window.location.assign(
           `/auth/account.html${data.profilePending ? '?profile=pending' : ''}`,
         );
@@ -172,6 +176,7 @@ handleConfirmation();
 window.addEventListener('hashchange', handleConfirmation);
 
 async function loadAccount() {
+  document.querySelector('#account-details').hidden = true;
   try {
     const { response, data } = await api('me');
     if (response.status === 401) {
@@ -182,9 +187,16 @@ async function loadAccount() {
       showStatus(data.error || 'Could not load your account. Please reload to try again.', true);
       return;
     }
+    if (data.mfaRequired) {
+      window.location.replace('/auth/security.html');
+      return;
+    }
     document.querySelector('#account-greeting').textContent = `Welcome, ${data.user.displayName}.`;
     document.querySelector('#account-email').textContent = data.user.email;
     document.querySelector('#account-details').hidden = false;
+    document.querySelector('#security-state').textContent = data.enabled
+      ? 'Two-factor authentication is on'
+      : 'Add two-factor authentication';
     showStatus(
       new URLSearchParams(window.location.search).get('profile') === 'pending'
         ? 'You’re signed in, but your date of birth could not be saved. Log in again later to retry.'
