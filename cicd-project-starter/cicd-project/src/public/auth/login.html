@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Log in · Luvora</title>
+    <link rel="stylesheet" href="/auth/auth.css" />
+    <script src="/auth/auth.js" defer></script>
+  </head>
+  <body data-page="login">
+    <a class="skip-link" href="#main">Skip to login</a>
+    <div class="auth-layout">
+      <aside class="story-panel" aria-label="Welcome back to Luvora">
+        <a class="wordmark" href="/auth/signup.html" aria-label="Luvora home"
+          >luvora<span>✳</span></a
+        >
+        <div class="story-copy">
+          <p class="eyebrow">Pick up where you left off</p>
+          <h1>Good things<br />start with <em>you.</em></h1>
+          <p>
+            A familiar face. A new conversation. Your next connection could be just a hello away.
+          </p>
+          <div class="connection-art" aria-hidden="true">
+            <span class="orbit orbit-one"></span><span class="orbit orbit-two"></span
+            ><span class="spark">✦</span><span class="art-caption">two paths, one possibility</span>
+          </div>
+        </div>
+        <p class="panel-footer">Made for meaningful connections.</p>
+      </aside>
+      <main id="main" class="form-panel">
+        <div class="top-link">
+          New here? <a href="/auth/signup.html">Join Luvora <span aria-hidden="true">↗</span></a>
+        </div>
+        <section class="form-content" aria-labelledby="form-title">
+          <p class="eyebrow">Your story continues</p>
+          <h2 id="form-title">Welcome back.</h2>
+          <p class="intro">A little closer to your kind of connection.</p>
+          <div id="form-status" class="notice" role="status" tabindex="-1" hidden></div>
+          <form id="auth-form" novalidate>
+            <fieldset id="form-fields">
+              <legend class="sr-only">Log in to Luvora</legend>
+              <div class="field">
+                <label for="email">Email address</label
+                ><input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autocomplete="username"
+                  maxlength="254"
+                  placeholder="you@example.com"
+                  required
+                  spellcheck="false"
+                  autocapitalize="none"
+                  aria-describedby="email-error"
+                />
+                <p class="field-error" id="email-error"></p>
+              </div>
+              <div class="field">
+                <label for="password">Password</label>
+                <div class="password-wrap">
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autocomplete="current-password"
+                    maxlength="128"
+                    required
+                    placeholder="Enter your password"
+                    aria-describedby="password-error"
+                  /><button
+                    class="reveal"
+                    type="button"
+                    data-reveal="password"
+                    aria-label="Show password"
+                    aria-pressed="false"
+                  >
+                    Show
+                  </button>
+                </div>
+                <p class="field-error" id="password-error"></p>
+              </div>
+              <p class="form-note">Just signed up? Confirm your email before logging in.</p>
+              <button class="primary-button" type="submit">
+                Log in <span aria-hidden="true">↗</span>
+              </button>
+            </fieldset>
+          </form>
+          <noscript><p class="notice">Please enable JavaScript to log in.</p></noscript>
+          <p class="form-footer">
+            <span aria-hidden="true">✧</span> A space for real people and real possibilities.
+          </p>
+        </section>
+        <footer class="page-footer">Luvora <span>Find your kind of connection.</span></footer>
+      </main>
+    </div>
+  </body>
+</html>
