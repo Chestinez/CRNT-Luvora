@@ -34,4 +34,20 @@ async function send(req, res) {
     .status(201)
     .json(await sendMessage(getViewerId(req), req.params.id, req.body));
 }
-module.exports = { list, history, send, sendMessage };
+async function photo(req, res) {
+  const viewerId = getViewerId(req);
+  const id = requireId(req.params.id);
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw createError(404, "Profile photo unavailable.");
+  }
+  const path = await model.photo(viewerId, id);
+  if (!path) throw createError(404, "Profile photo unavailable.");
+  const image = await require("../../services/chat/chat.photos").downloadPhoto(
+    path,
+  );
+  res
+    .set("X-Content-Type-Options", "nosniff")
+    .type(image.type)
+    .send(image.body);
+}
+module.exports = { list, history, send, sendMessage, photo };

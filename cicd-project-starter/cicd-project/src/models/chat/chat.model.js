@@ -99,4 +99,14 @@ async function send(viewerId, conversationId, payload) {
     throw error;
   }
 }
-module.exports = { list, history, send };
+async function photo(viewerId, conversationId) {
+  return withViewer(viewerId, async (db) => {
+    const {
+      rows: [result],
+    } = await db.query("SELECT public.chat_member_photo($1) AS path", [
+      conversationId,
+    ]);
+    return result?.path || null;
+  });
+}
+module.exports = { list, history, send, photo };

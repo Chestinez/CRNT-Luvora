@@ -235,3 +235,60 @@ a:hover {
 [hidden] {
   display: none !important;
 }
+
+.conversation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.conversation .avatar {
+  display: grid;
+  margin-top: 0;
+}
+.avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 1px solid var(--rose-pink);
+  background: var(--muted-lavender);
+  color: var(--midnight-plum);
+}
+.conversation .avatar-initials,
+.avatar-initials {
+  color: var(--midnight-plum);
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+}
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.conversation .conversation-details {
+  min-width: 0;
+  margin-top: 0;
+}
+.conversation-details strong {
+  color: #fff4f8;
+}
+.chat-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.chat-heading-details {
+  min-width: 0;
+}
+.chat-heading-details h2 {
+  margin-top: 0;
+}
+#chat-avatar .avatar {
+  width: 52px;
+  height: 52px;
+}

@@ -12,5 +12,6 @@ router.use((req, res, next) => {
 });
 router.get("/", controller.list);
 router.get("/:id/messages", controller.history);
+router.get("/:id/photo", controller.photo);
 router.post("/:id/messages", controller.send);
 module.exports = router;

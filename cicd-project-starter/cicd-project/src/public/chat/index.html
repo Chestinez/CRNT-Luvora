@@ -24,10 +24,13 @@
         </aside>
         <section aria-label="Chat">
           <div class="chat-heading">
-            <h2 id="name">Select a conversation</h2>
-            <p id="connection-status">
-              Your connected matches will appear here automatically.
-            </p>
+            <div id="chat-avatar" hidden></div>
+            <div class="chat-heading-details">
+              <h2 id="name">Select a conversation</h2>
+              <p id="connection-status">
+                Your connected matches will appear here automatically.
+              </p>
+            </div>
           </div>
           <button id="older" hidden type="button">Load older messages</button>
           <div id="messages" aria-label="Message history" tabindex="0"></div>

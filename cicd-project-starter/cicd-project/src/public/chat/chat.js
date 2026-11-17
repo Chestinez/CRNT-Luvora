@@ -17,6 +17,37 @@ let retry;
 let messages = new Map();
 const drafts = new Map();
 
+function avatar(conversation) {
+  const container = document.createElement("span");
+  container.className = "avatar";
+  container.setAttribute("aria-hidden", "true");
+  const initials = document.createElement("span");
+  initials.className = "avatar-initials";
+  initials.textContent = (conversation.name || "Luvora member")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((word) => Array.from(word)[0] || "")
+    .join("")
+    .toLocaleUpperCase();
+  const image = document.createElement("img");
+  image.alt = "";
+  image.loading = "lazy";
+  image.decoding = "async";
+  image.hidden = true;
+  image.onload = () => {
+    image.hidden = false;
+    initials.hidden = true;
+  };
+  image.onerror = () => {
+    image.hidden = true;
+    initials.hidden = false;
+  };
+  image.src = `/api/chat/${encodeURIComponent(conversation.id)}/photo`;
+  container.append(initials, image);
+  return container;
+}
+
 async function api(path = "", options = {}) {
   const response = await fetch(`/api/chat${path}`, {
     ...options,
@@ -30,6 +61,9 @@ async function api(path = "", options = {}) {
 
 function controls(conversation) {
   selectedConversation = conversation;
+  const headerAvatar = document.querySelector("#chat-avatar");
+  headerAvatar.replaceChildren(avatar(conversation));
+  headerAvatar.hidden = false;
   document.querySelector("#name").textContent =
     conversation.name || "Luvora member";
   document.querySelector("#connection-status").textContent =
@@ -103,6 +137,7 @@ async function select(id) {
   if (selected) drafts.set(selected, input.value);
   selected = id;
   selectedConversation = null;
+  document.querySelector("#chat-avatar").hidden = true;
   document.querySelector("#composer").hidden = true;
   retry = null;
   messages = new Map();
@@ -165,7 +200,10 @@ async function loadInbox() {
         0,
         90,
       );
-      button.append(name, preview);
+      const details = document.createElement("span");
+      details.className = "conversation-details";
+      details.append(name, preview);
+      button.append(avatar(conversation), details);
       button.onclick = () => select(conversation.id);
       section.append(button);
     }
@@ -174,6 +212,7 @@ async function loadInbox() {
   if (selected && !data.conversations.some((c) => c.id === selected)) {
     selected = null;
     selectedConversation = null;
+    document.querySelector("#chat-avatar").hidden = true;
     document.querySelector("#composer").hidden = true;
     messages.clear();
     history.replaceChildren();

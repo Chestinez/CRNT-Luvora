@@ -39,3 +39,18 @@ Run `npm run test:unit -- --runInBand` for the route regression tests. They mock
 Client sends `chat:send` with `{ conversation_id, id, body }`; server acknowledges `{ ok, message }` or `{ ok: false, error }`. The server broadcasts a content-free `chat:changed` signal after a committed send or a successful Discovery mutation. Pages reload their own permitted data through RLS, so the signal exposes no message content or conversation IDs. This simple notification bridge supports multiple demo ports in one Node process. Deployments with multiple Node processes need a shared event adapter/broker. Out-of-band database changes do not emit events through this bridge.
 
 Restart the demo/server after installing the changes. The existing 05_chat migration is still required; no additional migration is needed for Socket.IO.
+
+## Chat profile pictures
+
+The chat list and conversation header show the other member's profile photo, with initials when the photo is missing or cannot load. Discovery currently renders initials; it does not yet download photos itself. This feature reuses the existing profile_photos table and private profile-photos storage bucket. It does not add a separate photo-upload flow.
+
+To enable uploaded photos:
+
+1. Apply db_Schema_Change_log/05_chat/002_chat_photos.sql in the Supabase SQL editor after 001_chat.sql.
+2. Set SUPABASE_URL (your project HTTPS URL) and SUPABASE_SERVICE_ROLE_KEY (your server-only legacy service_role key) in .env.dev. Keep the key out of browser code, screenshots, and Git.
+3. The profile owner uploads their photo to profile-photos and saves its user-prefixed storage_path in profile_photos through the team's profile feature. Chat prefers is_primary, then falls back to the first photo by sort_order.
+4. Restart the app/demo. Without storage configuration, chat continues to work with initials.
+
+GET /api/chat/:id/photo checks the signed-in viewer and uses a narrowly scoped database function to find only the other member's photo. Current and ended conversations may show photos while can_read_conversation allows access; blocking still denies access. The server proxies the image and sends Cache-Control: no-store; it never sends storage credentials or signed URLs to the browser. A missing photo or inaccessible conversation returns 404. JPEG, PNG and WebP up to 8 MiB are supported.
+
+Photo-access unit tests mock storage; the browser smoke check verified avatars and missing-image fallback. Live storage and the new SQL migration still need testing against the team's development Supabase project.
