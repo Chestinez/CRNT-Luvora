@@ -8,6 +8,7 @@ const personRouter = require('./routers/Person.router');
 const postRouter = require('./routes/posts/posts.routes');
 const discoveryRouter = require('./routes/discovery/discovery.routes');
 const personalityRouter = require('./routes/personality/personality.routes');
+const compatibilityRouter = require('./routes/compatibility/compatibility.routes');
 
 const app = express();
 
@@ -31,6 +32,8 @@ app.use(['/api/posts', '/api/discovery'], (_req, res, next) => {
 app.use('/api/posts', postRouter);
 app.use('/api/discovery', discoveryRouter);
 app.use('/api/personality', personalityRouter);
+app.use('/api/compatibility', compatibilityRouter);
+
 // 404 handler — if no route above matched the request,
 // create a 404 error and pass it to the error handler below.
 app.use((req, res, next) => {
