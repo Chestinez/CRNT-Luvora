@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#191622" />
+    <title>Discover your personality | Luvora</title>
+    <link rel="stylesheet" href="/personality/personality.css" />
+    <script src="/personality/personality-data.js" defer></script>
+    <script src="/personality/personality.js" defer></script>
+  </head>
+
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Luvora home">
+        <svg
+          width="30"
+          height="30"
+          viewBox="0 0 32 32"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M16 27 5 16C-2 8 9-1 16 7 23-1 34 8 27 16L16 27Z"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <span>Luvora</span>
+      </a>
+
+      <span class="header-label">Profile setup</span>
+    </header>
+
+    <main id="app">
+      <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+      <section id="invitation" class="invitation" hidden>
+        <p class="eyebrow">Personality · Optional</p>
+        <h1>Make your profile<br />more you.</h1>
+        <p class="lead">Share how you connect, think and recharge.</p>
+
+        <ul class="benefits">
+          <li><span aria-hidden="true">✓</span> 100 short statements</li>
+          <li><span aria-hidden="true">◷</span> Take your time. Save and return.</li>
+          <li><span aria-hidden="true">♡</span> Choose whether to share your type</li>
+        </ul>
+
+        <div class="stack">
+          <button id="start" class="button primary" type="button">
+            Take the personality quiz
+          </button>
+          <a class="button secondary" href="/discovery/">Skip for now</a>
+          <button id="view-result" class="text-button" type="button" hidden>
+            View saved result
+          </button>
+        </div>
+
+        <p class="fine-print">
+          An original MBTI-inspired quiz for self-reflection.
+          Your preferences can evolve.
+        </p>
+      </section>
+
+      <section id="quiz" hidden>
+        <div class="page-heading">
+          <p class="eyebrow">Discover your personality</p>
+          <h1>A little more about you.</h1>
+          <p class="muted">
+            Choose how much you agree with each statement.
+          </p>
+        </div>
+
+        <div class="progress-heading">
+          <span id="answer-count"></span>
+          <span id="page-count"></span>
+        </div>
+
+        <progress id="progress" max="100" value="0">
+          0 of 100 answered
+        </progress>
+
+        <form id="quiz-form">
+          <div id="questions"></div>
+
+          <nav class="quiz-navigation" aria-label="Question pages">
+            <button id="back" class="button secondary" type="button">
+              Back
+            </button>
+
+            <button id="save-exit" class="text-button" type="button">
+              Save and exit
+            </button>
+
+            <button id="next" class="button primary" type="submit">
+              Continue
+            </button>
+          </nav>
+        </form>
+      </section>
+
+      <section id="review" hidden>
+        <div class="page-heading">
+          <p class="eyebrow">Before your result</p>
+          <h1>Review your answers.</h1>
+          <p class="muted">Select a statement to change your answer.</p>
+        </div>
+
+        <div id="review-list" class="review-list"></div>
+
+        <div class="actions">
+          <button id="review-back" class="button secondary" type="button">
+            Back to questions
+          </button>
+          <button id="finish" class="button primary" type="button">
+            See my result
+          </button>
+        </div>
+      </section>
+
+      <section id="result" class="result" hidden>
+        <p class="eyebrow">Your personality</p>
+        <h1 id="result-type" class="result-type"></h1>
+        <h2 id="result-name"></h2>
+
+        <div class="mascot-frame">
+          <img id="mascot-image" alt="" hidden />
+          <span id="mascot-symbol" aria-hidden="true"></span>
+        </div>
+
+        <p id="result-description" class="lead"></p>
+
+        <div id="breakdown" class="breakdown"></div>
+        <div id="resolutions" class="resolutions"></div>
+
+        <p id="published-status" class="muted" aria-live="polite"></p>
+
+        <div class="stack">
+          <button id="publish" class="button primary" type="button">
+            Add to my profile
+          </button>
+
+          <button id="edit" class="button secondary" type="button">
+            Review and edit answers
+          </button>
+
+          <a class="text-button" href="/discovery/">Continue to discovery</a>
+
+          <button id="delete" class="text-button danger" type="button">
+            Delete my assessment
+          </button>
+        </div>
+
+        <p class="fine-print">
+          The bars summarise your responses. They describe preferences,
+          rather than certainty or romantic compatibility.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
