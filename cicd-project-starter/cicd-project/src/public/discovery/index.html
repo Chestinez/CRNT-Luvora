@@ -11,8 +11,10 @@
   <body class="feed-page">
     <header class="masthead">
       <div class="feed-width feed-header">
-        <a class="wordmark" href="./">Luvora<span aria-hidden="true"> &#9825;</span></a>
-        <a class="manage-link" href="./my-posts.html">My couple stories</a>
+        <a class="wordmark" href="./"
+          >Luvora<span aria-hidden="true"> &#9825;</span></a
+        >
+        <nav class="feed-header-actions" aria-label="Member navigation"><a class="manage-link" href="./my-posts.html">My couple stories</a><a class="manage-link" href="/chat/">Messages</a></nav>
       </div>
     </header>
 
@@ -51,7 +53,12 @@
       </div>
       <noscript>Enable JavaScript to browse Discovery.</noscript>
 
-      <section id="profiles-panel" role="tabpanel" aria-labelledby="profiles-tab" tabindex="0">
+      <section
+        id="profiles-panel"
+        role="tabpanel"
+        aria-labelledby="profiles-tab"
+        tabindex="0"
+      >
         <div id="profiles-paused" class="feed-card connection-banner" hidden>
           <h2>Profile browsing is paused</h2>
           <p id="profiles-paused-message"></p>
@@ -74,12 +81,26 @@
           </div>
           <div id="profile-feedback" class="profile-feedback" hidden>
             <p id="profile-action-status" class="feed-status" role="status"></p>
-            <button class="feed-control" id="undo-profile-hide" type="button" hidden>
+            <button
+              class="feed-control"
+              id="undo-profile-hide"
+              type="button"
+              hidden
+            >
               Undo hide
             </button>
           </div>
-          <p id="profiles-status" class="feed-status" role="status">Loading profiles…</p>
-          <button class="feed-control" type="button" data-retry="profiles" hidden>Retry</button>
+          <p id="profiles-status" class="feed-status" role="status">
+            Loading profiles…
+          </p>
+          <button
+            class="feed-control"
+            type="button"
+            data-retry="profiles"
+            hidden
+          >
+            Retry
+          </button>
           <div id="profiles" class="feed-grid"></div>
         </div>
       </section>
@@ -93,9 +114,16 @@
       >
         <div class="feed-toolbar">
           <h2>Connections</h2>
-          <button id="refresh-connections" class="feed-control" type="button">Refresh</button>
+          <button id="refresh-connections" class="feed-control" type="button">
+            Refresh
+          </button>
         </div>
-        <p id="connections-status" class="feed-status" role="status" data-loading="true">
+        <p
+          id="connections-status"
+          class="feed-status"
+          role="status"
+          data-loading="true"
+        >
           Loading connections.
         </p>
         <div id="connection-active" hidden></div>
@@ -123,13 +151,24 @@
           <h3 id="connection-confirmation-title"></h3>
           <p class="card-bio"></p>
           <div class="profile-card-actions">
-            <button class="feed-control" value="cancel" autofocus>Cancel</button>
-            <button class="feed-control connection-primary" value="confirm"></button>
+            <button class="feed-control" value="cancel" autofocus>
+              Cancel
+            </button>
+            <button
+              class="feed-control connection-primary"
+              value="confirm"
+            ></button>
           </div>
         </form>
       </dialog>
 
-      <section id="stories-panel" role="tabpanel" aria-labelledby="stories-tab" tabindex="0" hidden>
+      <section
+        id="stories-panel"
+        role="tabpanel"
+        aria-labelledby="stories-tab"
+        tabindex="0"
+        hidden
+      >
         <div class="feed-toolbar">
           <h2>Couple stories</h2>
           <label id="story-filter" class="story-filter" hidden>
@@ -139,8 +178,12 @@
             </select>
           </label>
         </div>
-        <p id="stories-status" class="feed-status" role="status">Loading stories…</p>
-        <button class="feed-control" type="button" data-retry="stories" hidden>Retry</button>
+        <p id="stories-status" class="feed-status" role="status">
+          Loading stories…
+        </p>
+        <button class="feed-control" type="button" data-retry="stories" hidden>
+          Retry
+        </button>
         <div id="stories" class="feed-grid story-grid"></div>
       </section>
     </main>
@@ -154,10 +197,18 @@
           <dl class="profile-facts"></dl>
           <ul class="feed-tags" aria-label="Interests"></ul>
           <div class="profile-card-actions">
-            <button class="feed-control profile-connect" type="button">Connect</button>
-            <button class="feed-control profile-stories" type="button">View stories</button>
-            <button class="feed-control profile-save" type="button">Save</button>
-            <button class="feed-control profile-hide" type="button">Hide</button>
+            <button class="feed-control profile-connect" type="button">
+              Connect
+            </button>
+            <button class="feed-control profile-stories" type="button">
+              View stories
+            </button>
+            <button class="feed-control profile-save" type="button">
+              Save
+            </button>
+            <button class="feed-control profile-hide" type="button">
+              Hide
+            </button>
           </div>
         </div>
       </article>
@@ -175,3 +226,4 @@
     </template>
   </body>
 </html>
+

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Messages | Luvora</title>
+    <link rel="stylesheet" href="chat.css" />
+    <script src="/socket.io/socket.io.js" defer></script>
+    <script src="chat.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <a href="/discovery/">Luvora ♡</a
+      ><a href="/discovery/">Back to Discovery</a>
+    </header>
+    <main>
+      <h1>Messages</h1>
+      <p class="intro">A little hello can be the start of something lovely.</p>
+      <p id="status" role="status"></p>
+      <div class="inbox">
+        <aside aria-label="Conversations">
+          <h2>Your connections</h2>
+          <div id="conversations"></div>
+        </aside>
+        <section aria-label="Chat">
+          <div class="chat-heading">
+            <h2 id="name">Select a conversation</h2>
+            <p id="connection-status">
+              Your connected matches will appear here automatically.
+            </p>
+          </div>
+          <button id="older" hidden type="button">Load older messages</button>
+          <div id="messages" aria-label="Message history" tabindex="0"></div>
+          <form id="composer">
+            <label for="body">Your message</label
+            ><textarea
+              id="body"
+              aria-describedby="composer-hint"
+              maxlength="10000"
+              rows="3"
+              placeholder="Say something kind…"
+              disabled
+              required
+            ></textarea>
+            <p id="composer-hint" class="composer-hint">
+              Enter to send · Shift+Enter for a new line
+            </p>
+            <button id="send" disabled>Send message</button>
+          </form>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>
