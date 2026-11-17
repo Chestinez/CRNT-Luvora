@@ -6,9 +6,10 @@
     <title>Discovery | Luvora</title>
     <link rel="stylesheet" href="./discovery.css" />
     <link rel="stylesheet" href="./feed.css" />
+    <link rel="stylesheet" href="./browse.css" />
     <script src="./discovery.js" defer></script>
   </head>
-  <body class="feed-page">
+  <body class="feed-page discovery-page">
     <header class="masthead">
       <div class="feed-width feed-header">
         <a class="wordmark" href="./">Luvora<span aria-hidden="true"> &#9825;</span></a>
@@ -17,37 +18,39 @@
     </header>
 
     <main class="feed-width">
-      <h1>Discovery</h1>
-      <div class="feed-tabs" role="tablist" aria-label="Discovery">
-        <button
-          id="profiles-tab"
-          type="button"
-          role="tab"
-          aria-selected="true"
-          aria-controls="profiles-panel"
-        >
-          Profiles
-        </button>
-        <button
-          id="stories-tab"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          aria-controls="stories-panel"
-          tabindex="-1"
-        >
-          Stories
-        </button>
-        <button
-          id="connections-tab"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          aria-controls="connections-panel"
-          tabindex="-1"
-        >
-          Connections
-        </button>
+      <div class="discovery-heading">
+        <h1>Discovery</h1>
+        <div class="feed-tabs" role="tablist" aria-label="Discovery">
+          <button
+            id="profiles-tab"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            aria-controls="profiles-panel"
+          >
+            Profiles
+          </button>
+          <button
+            id="stories-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="stories-panel"
+            tabindex="-1"
+          >
+            Stories
+          </button>
+          <button
+            id="connections-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="connections-panel"
+            tabindex="-1"
+          >
+            Connections
+          </button>
+        </div>
       </div>
       <noscript>Enable JavaScript to browse Discovery.</noscript>
 
@@ -60,72 +63,127 @@
           </button>
         </div>
         <div id="profile-browser">
-          <div class="feed-toolbar">
+          <div class="browse-toolbar">
             <h2 id="profiles-heading">Discover people</h2>
-            <label class="story-filter">
-              Show
-              <select id="profile-list">
-                <option value="compatibility">Compatibility</option>
-                <option value="saved">Saved profiles</option>
-                <option value="hidden">Hidden profiles</option>
-              </select>
-            </label>
-            <p id="profiles-count" class="feed-count"></p>
-          </div>
-          <div id="compatibility-controls">
-            <label class="match-toggle">
-              <input id="show-match-details" type="checkbox" aria-controls="match-filters" />
-              Show scores and filters
-            </label>
-            <form id="match-filters" class="match-filters" hidden>
-              <label>
-                Rank by
-                <select name="order">
-                  <option value="alignment">Strongest mutual fit</option>
-                  <option value="shared">Most shared interests</option>
-                </select>
-              </label>
-              <label>
-                Minimum alignment
-                <select name="minScore">
-                  <option value="0">Any score</option>
-                  <option value="50">50%</option>
-                  <option value="65">65%</option>
-                  <option value="80">80%</option>
-                  <option value="90">90%</option>
-                </select>
-              </label>
-              <label>
-                Minimum age
-                <input name="minAge" type="number" min="18" max="120" placeholder="18" />
-              </label>
-              <label>
-                Maximum age
-                <input name="maxAge" type="number" min="18" max="120" placeholder="120" />
-              </label>
-              <label class="match-toggle">
-                <input name="sharedOnly" type="checkbox" value="true" />
-                At least one shared interest
-              </label>
-              <div class="match-filter-actions">
-                <button class="feed-control" type="submit">Apply filters</button>
-                <button class="feed-control" type="reset">Reset filters</button>
+            <form id="profile-search" role="search" aria-label="Search profiles">
+              <label class="visually-hidden" for="profile-query">Search by name or interest</label>
+              <div class="search-field">
+                <input
+                  id="profile-query"
+                  type="search"
+                  maxlength="100"
+                  placeholder="Search by name or interest"
+                />
+                <button id="clear-profile-query" class="clear-profile-query" type="button" hidden>
+                  Clear
+                </button>
               </div>
+              <button class="feed-control" type="submit">Search</button>
             </form>
           </div>
-          <div id="profile-feedback" class="profile-feedback" hidden>
-            <p id="profile-action-status" class="feed-status" role="status"></p>
-            <button class="feed-control" id="undo-profile-hide" type="button" hidden>
-              Undo hide
-            </button>
+          <section id="top-picks" class="top-picks" aria-labelledby="top-picks-title" hidden>
+            <h3 id="top-picks-title">Top picks</h3>
+            <div id="top-pick-list" class="top-pick-list"></div>
+          </section>
+          <div class="browse-layout">
+            <details id="browse-filters" class="feed-card browse-filters" open>
+              <summary>Filters</summary>
+              <div class="browse-filter-body">
+                <div class="profile-list-label">
+                  <label for="profile-list">Show</label
+                  ><select id="profile-list">
+                    <option value="compatibility">Compatibility</option>
+                    <option value="saved">Liked profiles</option>
+                    <option value="hidden">Hidden profiles</option>
+                  </select>
+                </div>
+                <div id="compatibility-controls">
+                  <label class="match-toggle">
+                    <input id="show-match-details" type="checkbox" />
+                    Show compatibility scores
+                  </label>
+                  <form id="match-filters" class="match-filters">
+                    <label>
+                      Rank by
+                      <select name="order">
+                        <option value="alignment">Strongest mutual fit</option>
+                        <option value="shared">Most shared interests</option>
+                      </select>
+                    </label>
+                    <label id="score-filter" hidden>
+                      Minimum alignment
+                      <select name="minScore">
+                        <option value="0">Any score</option>
+                        <option value="50">50%</option>
+                        <option value="65">65%</option>
+                        <option value="80">80%</option>
+                        <option value="90">90%</option>
+                      </select>
+                    </label>
+                    <div class="age-range">
+                      <label>
+                        Minimum age
+                        <input name="minAge" type="number" min="18" max="120" placeholder="18" />
+                      </label>
+                      <label>
+                        Maximum age
+                        <input name="maxAge" type="number" min="18" max="120" placeholder="120" />
+                      </label>
+                    </div>
+                    <label class="match-toggle">
+                      <input name="sharedOnly" type="checkbox" value="true" />
+                      At least one shared interest
+                    </label>
+                    <p id="filter-error" class="feed-status" role="alert" hidden></p>
+                    <div class="match-filter-actions">
+                      <button class="feed-control" type="submit">Apply filters</button>
+                      <button class="feed-control" type="reset">Reset</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </details>
+            <div class="browse-stage">
+              <nav
+                id="profile-navigation"
+                class="profile-navigation"
+                aria-label="Browse profiles"
+                hidden
+              >
+                <button id="previous-profile" class="feed-control" type="button">
+                  <span aria-hidden="true">‹</span> Previous
+                </button>
+                <p id="profiles-count" class="feed-count"></p>
+                <button id="next-profile" class="feed-control" type="button">
+                  Next <span aria-hidden="true">›</span>
+                </button>
+              </nav>
+              <p id="profile-announcement" class="visually-hidden" role="status"></p>
+              <div id="profile-feedback" class="profile-feedback" hidden>
+                <p id="profile-action-status" class="feed-status" role="status"></p>
+                <button class="feed-control" id="undo-profile-hide" type="button" hidden>
+                  Undo hide
+                </button>
+              </div>
+              <p id="profiles-status" class="feed-status" role="status">Loading profiles.</p>
+              <button class="feed-control" type="button" data-retry="profiles" hidden>Retry</button>
+              <div id="profiles"></div>
+              <p id="profiles-page-status" class="feed-status" role="status"></p>
+              <button class="feed-control" id="reload-profiles" type="button" hidden>
+                Reload profiles
+              </button>
+            </div>
+            <aside
+              id="profile-details"
+              class="feed-card browse-details"
+              aria-labelledby="details-title"
+              hidden
+            >
+              <h3 id="details-title">Profile details</h3>
+              <p id="profile-match" class="profile-match-details" hidden></p>
+              <dl class="profile-facts"></dl>
+            </aside>
           </div>
-          <p id="profiles-status" class="feed-status" role="status">Loading profiles…</p>
-          <button class="feed-control" type="button" data-retry="profiles" hidden>Retry</button>
-          <div id="profiles" class="feed-grid"></div>
-          <button class="feed-control" id="more-profiles" type="button" hidden>
-            Load more profiles
-          </button>
-          <p id="profiles-page-status" class="feed-status" role="status"></p>
         </div>
       </section>
 
@@ -191,17 +249,31 @@
     </main>
 
     <template id="profile-card">
-      <article class="feed-card">
-        <div class="profile-cover" aria-hidden="true"><span></span></div>
+      <article class="feed-card focused-profile" aria-labelledby="focused-profile-name">
+        <div class="profile-cover">
+          <p class="swipe-hint" aria-hidden="true"></p>
+          <span class="cover-initial" aria-hidden="true"></span>
+          <span class="profile-cover-avatar" aria-hidden="true"></span>
+          <div class="profile-identity">
+            <h3 id="focused-profile-name" tabindex="-1"></h3>
+            <p class="profile-location"></p>
+          </div>
+        </div>
         <div class="card-body">
-          <h3></h3>
-          <p class="card-bio"></p>
-          <dl class="profile-facts"></dl>
-          <ul class="feed-tags" aria-label="Interests"></ul>
           <div class="profile-card-actions">
             <button class="feed-control profile-connect" type="button">Connect</button>
+            <button class="feed-control profile-save" type="button">Like</button>
+          </div>
+          <div class="profile-summary">
+            <h4>About me</h4>
+            <p class="card-bio"></p>
+          </div>
+          <div class="profile-interests">
+            <h4>Interests</h4>
+            <ul class="feed-tags" aria-label="Interests"></ul>
+          </div>
+          <div class="profile-card-actions profile-secondary-actions">
             <button class="feed-control profile-stories" type="button">View stories</button>
-            <button class="feed-control profile-save" type="button">Save</button>
             <button class="feed-control profile-hide" type="button">Hide</button>
           </div>
         </div>
