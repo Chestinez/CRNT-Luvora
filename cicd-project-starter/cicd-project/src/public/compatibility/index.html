@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your preferences · Luvora</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --background: #191622;
+      --surface: #24202f;
+      --pink: #f6a4b1;
+      --lavender: #d9b8df;
+      --text: #faf7fc;
+      --muted: #c0b8ca;
+      --border: #51465d;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--background);
+      color: var(--text);
+      font-family: system-ui, sans-serif;
+      line-height: 1.6;
+    }
+
+    header {
+      max-width: 1100px;
+      margin: auto;
+      padding: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      font-size: 26px;
+      font-weight: 750;
+    }
+
+    .brand span { color: var(--pink); }
+
+    main {
+      max-width: 680px;
+      margin: 48px auto;
+      padding: 0 24px 48px;
+    }
+
+    h1 {
+      font-size: clamp(26px, 5vw, 36px);
+      line-height: 1.25;
+      margin: 16px 0;
+    }
+
+    .muted { color: var(--muted); }
+
+    .eyebrow {
+      color: var(--lavender);
+      font-size: 14px;
+      font-weight: 650;
+    }
+
+    progress {
+      width: 100%;
+      height: 8px;
+      accent-color: var(--pink);
+      margin: 12px 0 28px;
+    }
+
+    fieldset {
+      border: 0;
+      margin: 24px 0;
+      padding: 0;
+    }
+
+    legend {
+      margin-bottom: 12px;
+      color: var(--muted);
+    }
+
+    .option {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 18px;
+      margin-bottom: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      cursor: pointer;
+    }
+
+    .option:has(input:checked) {
+      border-color: var(--pink);
+      background: #372734;
+    }
+
+    input {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--pink);
+      flex-shrink: 0;
+    }
+
+    button, .link-button {
+      font: inherit;
+      font-weight: 650;
+      padding: 13px 22px;
+      border-radius: 999px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    button {
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+    }
+
+    .primary {
+      background: var(--pink);
+      color: var(--background);
+      border: 1px solid var(--pink);
+    }
+
+    button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    :focus-visible {
+      outline: 3px solid var(--lavender);
+      outline-offset: 4px;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 28px;
+    }
+
+    #notice {
+      color: #ffc1c8;
+      min-height: 26px;
+    }
+
+    #finished {
+      padding: 28px;
+      background: var(--surface);
+      border-radius: 20px;
+    }
+
+    .finish-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    [hidden] { display: none !important; }
+  </style>
+  <script src="./compatibility.js" defer></script>
+</head>
+<body>
+  <header>
+    <div class="brand"><span>♡</span> Luvora</div>
+    <span class="muted">Profile setup</span>
+  </header>
+
+  <main>
+    <p id="loading" role="status">Loading your preferences…</p>
+    <p id="notice" role="alert"></p>
+    <button id="retry" type="button" hidden>Reload saved progress</button>
+
+    <section id="quiz" hidden>
+      <div class="eyebrow" id="category"></div>
+      <p class="muted" id="position"></p>
+      <progress id="progress" max="15" value="0"
+        aria-label="Saved answers"></progress>
+
+      <h1 id="question" tabindex="-1"></h1>
+
+      <form id="answer-form">
+        <fieldset id="choices" aria-labelledby="question">
+          <legend id="instruction"></legend>
+          <div id="options"></div>
+        </fieldset>
+
+        <p class="muted" id="save-status" role="status">
+          Your answer is saved when you select Continue.
+        </p>
+
+        <div class="actions">
+          <button id="back" type="button">Back</button>
+          <button id="next" class="primary" type="submit">
+            Continue
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section id="finished" hidden>
+      <div class="eyebrow">Preferences saved</div>
+      <h1>You’ve shared what matters to you.</h1>
+      <p class="muted">
+        Explore your personality with our optional MBTI-style quiz,
+        or continue to discovery.
+      </p>
+
+      <div class="finish-links">
+        <a class="link-button primary" href="/personality/">
+          Explore my personality
+        </a>
+        <a class="link-button primary" href="/discovery/">
+          Start discovering
+        </a>
+        <button id="edit" type="button">Edit my answers</button>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
