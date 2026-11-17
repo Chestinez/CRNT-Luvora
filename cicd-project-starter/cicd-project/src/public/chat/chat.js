@@ -7,6 +7,7 @@ const send = document.querySelector("#send");
 const older = document.querySelector("#older");
 let viewer;
 let selected;
+let selectedConversation;
 let cursor;
 let sending = false;
 let refreshing = false;
@@ -28,6 +29,7 @@ async function api(path = "", options = {}) {
 }
 
 function controls(conversation) {
+  selectedConversation = conversation;
   document.querySelector("#name").textContent =
     conversation.name || "Luvora member";
   document.querySelector("#connection-status").textContent =
@@ -36,6 +38,10 @@ function controls(conversation) {
       : "Connection ended · Your chat history is still here.";
   input.disabled = sending || !conversation.can_send;
   send.disabled = sending || !conversation.can_send;
+  document.querySelector("#composer").hidden = conversation.status === "ended";
+  input.placeholder = conversation.can_send
+    ? "Say something kind…"
+    : "Messaging is unavailable.";
 }
 
 function renderMessages() {
@@ -48,7 +54,9 @@ function renderMessages() {
       a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id),
   );
   if (!sorted.length)
-    history.textContent = "No messages yet. Start with a hello!";
+    history.textContent = selectedConversation?.can_send
+      ? "No messages yet. Start with a hello!"
+      : "No messages were exchanged in this conversation.";
   for (const message of sorted) {
     const bubble = document.createElement("div");
     bubble.className = `message${message.sender_id === viewer ? " mine" : ""}`;
@@ -94,6 +102,8 @@ async function select(id) {
   if (sending) return;
   if (selected) drafts.set(selected, input.value);
   selected = id;
+  selectedConversation = null;
+  document.querySelector("#composer").hidden = true;
   retry = null;
   messages = new Map();
   history.replaceChildren();
@@ -117,20 +127,54 @@ async function loadInbox() {
   if (!data.conversations.length)
     list.textContent =
       "No conversations yet. Accept a connection in Discovery to start chatting.";
-  for (const conversation of data.conversations) {
-    const button = document.createElement("button");
-    button.className = "conversation";
-    button.setAttribute("aria-current", String(conversation.id === selected));
-    const name = document.createElement("strong");
-    name.textContent = conversation.name || "Luvora member";
-    const preview = document.createElement("span");
-    preview.textContent = `${conversation.can_send ? "Connected" : "Ended"} · ${(conversation.last_message || "Say hello").slice(0, 90)}`;
-    button.append(name, preview);
-    button.onclick = () => select(conversation.id);
-    list.append(button);
+  for (const group of [
+    {
+      title: "Matched",
+      ended: false,
+      empty:
+        "No current matches. Connect with someone in Discovery to start chatting.",
+    },
+    { title: "Ended", ended: true, empty: "No ended conversations." },
+  ]) {
+    const section = document.createElement("section");
+    section.className = "conversation-group";
+    const heading = document.createElement("h3");
+    const conversations = data.conversations.filter(
+      (c) => (c.status === "ended") === group.ended,
+    );
+    heading.textContent = `${group.title} (${conversations.length})`;
+    section.setAttribute("aria-label", group.title);
+    section.append(heading);
+    if (!conversations.length) {
+      const empty = document.createElement("p");
+      empty.className = "conversation-empty";
+      empty.textContent = group.empty;
+      section.append(empty);
+    }
+    for (const conversation of conversations) {
+      const button = document.createElement("button");
+      button.className = "conversation";
+      button.setAttribute("aria-current", String(conversation.id === selected));
+      const name = document.createElement("strong");
+      name.textContent = conversation.name || "Luvora member";
+      const preview = document.createElement("span");
+      const fallback = conversation.can_send
+        ? "Say hello"
+        : "No messages exchanged";
+      preview.textContent = (conversation.last_message || fallback).slice(
+        0,
+        90,
+      );
+      button.append(name, preview);
+      button.onclick = () => select(conversation.id);
+      section.append(button);
+    }
+    list.append(section);
   }
   if (selected && !data.conversations.some((c) => c.id === selected)) {
     selected = null;
+    selectedConversation = null;
+    document.querySelector("#composer").hidden = true;
     messages.clear();
     history.replaceChildren();
     input.disabled = send.disabled = true;
@@ -178,7 +222,7 @@ input.addEventListener("keydown", (event) => {
 document.querySelector("#composer").onsubmit = async (event) => {
   event.preventDefault();
   const body = input.value.trim();
-  if (!body || !selected || sending) return;
+  if (!body || !selected || !selectedConversation?.can_send || sending) return;
   if (!socket.connected) {
     status.textContent =
       "Reconnecting. Your draft is saved; send when connected.";

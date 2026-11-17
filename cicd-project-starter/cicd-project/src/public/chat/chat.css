@@ -214,3 +214,24 @@ a:hover {
   font-size: 12px;
   margin: 8px 0 0;
 }
+
+.conversation-group + .conversation-group {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.conversation-group h3 {
+  margin: 0 0 12px;
+  color: var(--muted-lavender);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.conversation-empty {
+  color: var(--muted-lavender);
+  font-size: 13px;
+  line-height: 1.6;
+}
+[hidden] {
+  display: none !important;
+}
