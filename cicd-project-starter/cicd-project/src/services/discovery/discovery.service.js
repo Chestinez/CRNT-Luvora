@@ -1,6 +1,7 @@
 const createError = require('http-errors');
 const withViewer = require('../../db/with-viewer');
 const model = require('../../models/discovery/discovery.model');
+const { rankInterestSearch } = require('./interest-search');
 
 const pageSize = 30;
 
@@ -44,6 +45,31 @@ async function listCompatibleProfiles(viewerId, snapshotId, position, options) {
     if (error.code === 'LV400') throw createError(400, error.message);
     if (error.code === 'LV410') throw createError(410, error.message);
     if (error.code === 'LV403') throw createError(403, error.message);
+    throw error;
+  }
+}
+
+async function searchProfiles(viewerId, query) {
+  const candidates = await withProfileBrowsing(viewerId, async (db) => {
+    const { rows } = await model.searchCandidates(db, viewerId, query, 120);
+    return rows;
+  });
+  const { ids, mode } = await rankInterestSearch(query, candidates);
+  return withProfileBrowsing(viewerId, async (db) => {
+    const { rows } = await model.listSearchResults(db, viewerId, ids);
+    return { profiles: rows, mode };
+  });
+}
+
+async function profileCompatibility(viewerId, targetId) {
+  try {
+    return await withProfileBrowsing(viewerId, async (db) => {
+      const { rows } = await model.profileCompatibility(db, targetId);
+      if (!rows.length) throw createError(404, 'Compatibility is unavailable for this profile.');
+      return rows[0];
+    });
+  } catch (error) {
+    if (error.code === '42883') throw createError(503, 'Compatibility details are unavailable.');
     throw error;
   }
 }
@@ -113,6 +139,8 @@ function listCoupleStories(viewerId) {
 module.exports = {
   listProfiles,
   listCompatibleProfiles,
+  searchProfiles,
+  profileCompatibility,
   listActionProfiles,
   addProfileAction,
   removeProfileAction,

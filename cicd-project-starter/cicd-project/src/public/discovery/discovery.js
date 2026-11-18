@@ -19,23 +19,16 @@ const feeds = {
   profiles: { url: '/api/discovery/profiles' },
   stories: { url: '/api/discovery/couple-stories', empty: 'No published stories yet.' },
 };
-const tabs = [...document.querySelectorAll('[role="tab"]')];
-const profileList = document.querySelector('#profile-list');
-const compatibilityControls = document.querySelector('#compatibility-controls');
-const showMatchDetails = document.querySelector('#show-match-details');
-const matchFilters = document.querySelector('#match-filters');
+const tabList = document.querySelector('[role="tablist"]');
+const tabs = [...tabList.querySelectorAll('[role="tab"]')];
+const profileListsNav = document.querySelector('#profile-lists');
+const searchStatus = document.querySelector('#search-status');
 const reloadProfiles = document.querySelector('#reload-profiles');
-const browseFilters = document.querySelector('#browse-filters');
-const filterError = document.querySelector('#filter-error');
 const profileSearch = document.querySelector('#profile-search');
 const profileQuery = document.querySelector('#profile-query');
 const clearProfileQuery = document.querySelector('#clear-profile-query');
 const profileStage = document.querySelector('#profiles');
 const profileDetails = document.querySelector('#profile-details');
-const profileNavigation = document.querySelector('#profile-navigation');
-const previousProfile = document.querySelector('#previous-profile');
-const nextProfile = document.querySelector('#next-profile');
-const profileCount = document.querySelector('#profiles-count');
 const profileAnnouncement = document.querySelector('#profile-announcement');
 const topPicks = document.querySelector('#top-picks');
 const profilePageStatus = document.querySelector('#profiles-page-status');
@@ -60,8 +53,9 @@ let nextCompatibilityPage = null;
 let profilesLoaded = false;
 let profileRows = [];
 let profileIndex = 0;
-let profileSearchTerms = [];
-let appliedMatchFilters = new URLSearchParams();
+let activeProfileList = 'compatibility';
+let profileSearchQuery = '';
+let compatibilityRead;
 
 function readableLabel(value) {
   return value.replaceAll(/[_-]+/g, ' ').replace(/^./, (letter) => letter.toUpperCase());
@@ -116,7 +110,14 @@ function renderProfile(profile, listName) {
   const card = document.querySelector('#profile-card').content.cloneNode(true);
   const cover = card.querySelector('.profile-cover');
   cover.classList.add(profileTone(profile));
-  for (const span of cover.querySelectorAll('span')) span.textContent = profileInitial(profile);
+  for (const mark of cover.querySelectorAll('.cover-initial, .profile-cover-avatar')) {
+    mark.textContent = profileInitial(profile);
+  }
+  for (const arrow of cover.querySelectorAll('[data-step]')) {
+    arrow.addEventListener('click', () => {
+      if (arrow.getAttribute('aria-disabled') === 'false') moveProfile(Number(arrow.dataset.step));
+    });
+  }
   card.querySelector('h3').textContent = [profile.display_name, profile.age_years]
     .filter((value) => value != null)
     .join(', ');
@@ -187,7 +188,7 @@ function renderProfile(profile, listName) {
 function bindProfileSwipe(cover, connectButton) {
   let origin;
   cover.addEventListener('pointerdown', (event) => {
-    if (!event.isPrimary || event.button !== 0) return;
+    if (!event.isPrimary || event.button !== 0 || event.target.closest('button')) return;
     origin = { id: event.pointerId, x: event.clientX, y: event.clientY };
     cover.setPointerCapture(event.pointerId);
   });
@@ -208,21 +209,19 @@ function bindProfileSwipe(cover, connectButton) {
 }
 
 function renderProfileDetails(profile, listName) {
-  const facts = profileDetails.querySelector('.profile-facts');
-  const match = profileDetails.querySelector('#profile-match');
+  compatibilityRead?.abort();
+  compatibilityRead = null;
+  const facts = profileDetails.querySelector('#details-title + .profile-facts');
+  const fit = profileDetails.querySelector('#profile-fit');
+  const summary = fit.querySelector('#profile-match');
+  const directions = fit.querySelector('#profile-fit-directions');
+  const common = fit.querySelector('#profile-common');
   facts.replaceChildren();
+  directions.replaceChildren();
+  common.hidden = true;
   if (!profile) {
     profileDetails.hidden = true;
     return;
-  }
-  match.hidden = listName !== 'compatibility' || !showMatchDetails.checked;
-  if (!match.hidden) {
-    const alignment =
-      profile.alignment == null
-        ? 'Limited match data'
-        : `${profile.alignment}% preference alignment`;
-    const shared = profile.shared_count ?? 0;
-    match.textContent = `${alignment}\n${shared} shared interest${shared === 1 ? '' : 's'}`;
   }
   addFact(
     facts,
@@ -233,7 +232,59 @@ function renderProfileDetails(profile, listName) {
   addFact(facts, 'Pronouns', profile.pronouns);
   addFact(facts, 'MBTI', profile.mbti_type);
   addFact(facts, 'Zodiac', profile.zodiac_sign);
-  profileDetails.hidden = !facts.childElementCount && match.hidden;
+
+  fit.hidden = listName === 'hidden';
+  profileDetails.hidden = !facts.childElementCount && fit.hidden;
+  if (fit.hidden) return;
+  summary.textContent = Number.isInteger(profile.alignment)
+    ? profile.alignment + '% mutual alignment'
+    : 'Checking compatibility…';
+  void loadProfileCompatibility(profile, summary, directions, common);
+}
+
+async function loadProfileCompatibility(profile, summary, directions, common) {
+  const request = new AbortController();
+  compatibilityRead = request;
+  try {
+    const response = await fetch(
+      feeds.profiles.url + '/' + encodeURIComponent(profile.user_id) + '/compatibility',
+      { signal: request.signal },
+    );
+    if (!response.ok) throw new Error('Compatibility details unavailable');
+    const result = await response.json();
+    if (request.signal.aborted) return;
+    summary.textContent = Number.isInteger(result.alignment)
+      ? result.alignment + '% mutual alignment'
+      : 'Limited preference data';
+    addFact(
+      directions,
+      'They fit your preferences',
+      result.fits_your_preferences ? readableLabel(result.fits_your_preferences) : 'Limited data',
+    );
+    addFact(
+      directions,
+      'You fit their preferences',
+      result.fits_their_preferences ? readableLabel(result.fits_their_preferences) : 'Limited data',
+    );
+    const shared = result.shared_interests?.map(readableLabel) ?? [];
+    const commonGround = [];
+    if (shared.length) commonGround.push('Shared interests: ' + shared.join(', '));
+    if (result.shared_goal) commonGround.push('Same relationship goal');
+    common.textContent = commonGround.join(' · ');
+    common.hidden = !commonGround.length;
+  } catch {
+    if (request.signal.aborted) return;
+    if (!Number.isInteger(profile.alignment))
+      summary.textContent = 'Compatibility details unavailable.';
+    if (Number.isInteger(profile.shared_count) && profile.shared_count > 0) {
+      common.textContent =
+        profile.shared_count +
+        (profile.shared_count === 1 ? ' shared interest' : ' shared interests');
+      common.hidden = false;
+    }
+  } finally {
+    if (compatibilityRead === request) compatibilityRead = null;
+  }
 }
 
 function openConnections(refresh = true) {
@@ -263,6 +314,7 @@ function showBrowsingPause() {
   const paused = connectionState?.browsing === 'paused';
   document.querySelector('#profile-browser').hidden = paused;
   document.querySelector('#profiles-paused').hidden = !paused;
+  profileListsNav.hidden = paused || tabs[0].getAttribute('aria-selected') !== 'true';
   if (!paused) return;
   feeds.profiles.request?.abort();
   feeds.profiles.request = null;
@@ -543,8 +595,8 @@ async function changeProfileAction(profile, action, enable) {
     }
     if (!response.ok) throw new Error('Profile action failed');
 
-    const shown = visibleProfiles()[profileIndex];
-    const listName = profileList.value;
+    const shown = profileRows[profileIndex];
+    const listName = activeProfileList;
     const row = profileRows.find(({ user_id }) => user_id === profile.user_id);
     if (action === 'hidden') {
       if (enable) {
@@ -570,7 +622,7 @@ async function changeProfileAction(profile, action, enable) {
       await loadProfiles({ selectId: shown?.user_id });
     } else if (removesRow && row) {
       profileRows = profileRows.filter(({ user_id }) => user_id !== profile.user_id);
-      const visible = visibleProfiles();
+      const visible = profileRows;
       const retained = visible.findIndex(({ user_id }) => user_id === shown?.user_id);
       showProfileAt(retained < 0 ? profileIndex : retained);
       if (!visible.length && nextCompatibilityPage) {
@@ -578,7 +630,7 @@ async function changeProfileAction(profile, action, enable) {
       } else if (!visible.length) {
         const status = document.querySelector('#profiles-status');
         status.hidden = false;
-        status.textContent = profileSearchTerms.length
+        status.textContent = profileSearchQuery
           ? 'No profiles match this search.'
           : profileLists[listName].empty;
       }
@@ -600,13 +652,13 @@ async function changeProfileAction(profile, action, enable) {
       tabs[0].getAttribute('aria-selected') === 'true' &&
       connectionState?.browsing !== 'paused'
     ) {
-      const stillShown = visibleProfiles()[profileIndex]?.user_id === profile.user_id;
+      const stillShown = profileRows[profileIndex]?.user_id === profile.user_id;
       const like = stillShown && action === 'saved' && profileStage.querySelector('.profile-save');
       const target =
         like ||
         (!undoButton.hidden && undoButton) ||
         profileStage.querySelector('h3') ||
-        profileQuery;
+        profileListsNav.querySelector('[aria-pressed="true"]');
       target.focus();
     }
   }
@@ -652,28 +704,9 @@ function setStories(rows) {
   renderStories();
 }
 
-function searchText(value) {
-  return value
-    .toLocaleLowerCase()
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .replace(/[_-]+/g, ' ')
-    .trim();
-}
-
-function visibleProfiles() {
-  if (!profileSearchTerms.length) return profileRows;
-  return profileRows.filter((profile) => {
-    const searchable = [profile.display_name, ...(profile.interests ?? [])].map(searchText);
-    return profileSearchTerms.every((term) => searchable.some((text) => text.includes(term)));
-  });
-}
-
 function syncTopPicks(profile) {
   const picks =
-    profileList.value === 'compatibility' && !profileSearchTerms.length
-      ? profileRows.slice(0, 4)
-      : [];
+    activeProfileList === 'compatibility' && !profileSearchQuery ? profileRows.slice(0, 4) : [];
   topPicks.hidden = !picks.length;
   const list = topPicks.querySelector('#top-pick-list');
   const key = JSON.stringify(picks.map((pick) => pick.user_id));
@@ -715,32 +748,36 @@ function syncTopPicks(profile) {
   }
 }
 
-function syncProfileNavigation(visible = visibleProfiles()) {
+function syncProfileNavigation() {
   const loading = Boolean(feeds.profiles.request);
-  profileNavigation.hidden = !visible.length;
-  previousProfile.setAttribute('aria-disabled', String(loading || profileIndex <= 0));
-  nextProfile.setAttribute(
-    'aria-disabled',
-    String(loading || (profileIndex >= visible.length - 1 && !nextCompatibilityPage)),
-  );
-  profileCount.textContent = visible.length
-    ? nextCompatibilityPage
-      ? `Profile ${profileIndex + 1}`
-      : `${profileIndex + 1} of ${visible.length}`
-    : '';
+  const previous = profileStage.querySelector('.profile-arrow-previous');
+  const next = profileStage.querySelector('.profile-arrow-next');
+  if (!previous || !next) return;
+  const disablePrevious = loading || profileIndex <= 0;
+  const disableNext = loading || (profileIndex >= profileRows.length - 1 && !nextCompatibilityPage);
+  previous.setAttribute('aria-disabled', String(disablePrevious));
+  previous.tabIndex = disablePrevious ? -1 : 0;
+  next.setAttribute('aria-disabled', String(disableNext));
+  next.tabIndex = disableNext ? -1 : 0;
+  const count = profileStage.querySelector('.profile-position');
+  count.textContent = nextCompatibilityPage
+    ? 'Profile ' + (profileIndex + 1)
+    : profileIndex + 1 + ' of ' + profileRows.length;
 }
 
 function showProfileAt(index = profileIndex) {
-  const visible = visibleProfiles();
-  profileIndex = Math.max(0, Math.min(index, visible.length - 1));
-  const profile = visible[profileIndex];
-  const listName = profileList.value;
-  profileStage.replaceChildren(...(profile ? [renderProfile(profile, listName)] : []));
-  renderProfileDetails(profile, listName);
-  syncProfileNavigation(visible);
+  const focusedStep = document.activeElement?.dataset.step;
+  profileIndex = Math.max(0, Math.min(index, profileRows.length - 1));
+  const profile = profileRows[profileIndex];
+  profileStage.replaceChildren(...(profile ? [renderProfile(profile, activeProfileList)] : []));
+  renderProfileDetails(profile, activeProfileList);
+  syncProfileNavigation();
   syncTopPicks(profile);
+  if (focusedStep) {
+    profileStage.querySelector('[data-step="' + focusedStep + '"]')?.focus({ preventScroll: true });
+  }
   profileAnnouncement.textContent = profile
-    ? `Showing ${profile.display_name}, profile ${profileIndex + 1}.`
+    ? 'Showing ' + profile.display_name + ', profile ' + (profileIndex + 1) + '.'
     : '';
 }
 
@@ -748,7 +785,7 @@ function moveProfile(direction) {
   if (feeds.profiles.request || confirmation.open) return;
   const target = profileIndex + direction;
   if (target < 0) return;
-  if (target < visibleProfiles().length) {
+  if (target < profileRows.length) {
     showProfileAt(target);
     return;
   }
@@ -761,15 +798,18 @@ async function loadProfiles({ append = false, selectIndex = 0, selectId = null }
   feed.request?.abort();
   const request = new AbortController();
   feed.request = request;
-  const listName = profileList.value;
+  const listName = activeProfileList;
   const profileView = profileLists[listName];
   const isCompatibility = listName === 'compatibility';
-  const baseUrl = feed.url + profileView.path;
+  const isSearch = isCompatibility && Boolean(profileSearchQuery);
+  const url = feed.url + (isSearch ? '/search' : profileView.path);
   const status = document.querySelector('#profiles-status');
   const retry = document.querySelector('[data-retry="profiles"]');
 
-  compatibilityControls.hidden = !isCompatibility;
-  document.querySelector('#profiles-heading').textContent = profileView.heading;
+  profileSearch.hidden = !isCompatibility;
+  document.querySelector('#profiles-heading').textContent = isSearch
+    ? 'Search results'
+    : profileView.heading;
   profilePageStatus.textContent = append ? 'Loading more profiles.' : '';
   reloadProfiles.hidden = true;
   retry.hidden = true;
@@ -777,8 +817,9 @@ async function loadProfiles({ append = false, selectIndex = 0, selectId = null }
     profilesLoaded = false;
     profileRows = [];
     nextCompatibilityPage = null;
+    searchStatus.hidden = true;
     status.hidden = false;
-    status.textContent = 'Loading profiles.';
+    status.textContent = isSearch ? 'Searching public profiles…' : 'Loading profiles.';
     showProfileAt(0);
   } else {
     status.hidden = true;
@@ -786,72 +827,69 @@ async function loadProfiles({ append = false, selectIndex = 0, selectId = null }
   }
 
   try {
-    let query = append
-      ? new URLSearchParams(nextCompatibilityPage)
-      : isCompatibility
-        ? appliedMatchFilters
-        : new URLSearchParams();
-
-    // With a search active, skip cursor pages that have no result for the requested position.
-    do {
-      const url = query.size ? `${baseUrl}?${query}` : baseUrl;
-      const response = await fetch(url, { signal: request.signal });
+    const endpoint = append ? url + '?' + new URLSearchParams(nextCompatibilityPage) : url;
+    const options = { signal: request.signal };
+    if (isSearch) {
+      options.method = 'POST';
+      options.headers = { 'Content-Type': 'application/json' };
+      options.body = JSON.stringify({ query: profileSearchQuery });
+    }
+    const response = await fetch(endpoint, options);
+    if (request.signal.aborted) return;
+    if (response.status === 410) {
+      status.hidden = true;
+      nextCompatibilityPage = null;
+      profilePageStatus.textContent = 'This browse list expired. Reload to continue.';
+      reloadProfiles.hidden = false;
+      return;
+    }
+    if ([400, 401, 403].includes(response.status)) {
+      const message =
+        response.status === 401 ? 'Sign in to view profiles.' : (await response.json()).error;
       if (request.signal.aborted) return;
-      if (response.status === 410) {
-        status.hidden = true;
-        nextCompatibilityPage = null;
-        profilePageStatus.textContent = 'This browse list expired. Reload to continue.';
-        reloadProfiles.hidden = false;
-        return;
+      profilesLoaded = false;
+      profileRows = [];
+      nextCompatibilityPage = null;
+      showProfileAt(0);
+      status.hidden = false;
+      status.textContent = message;
+      profilePageStatus.textContent = '';
+      if (response.status === 403 && !changingConnection && !connectionRead) {
+        void loadConnections({ quiet: true });
       }
-      if ([400, 401, 403].includes(response.status)) {
-        const message =
-          response.status === 401 ? 'Sign in to view profiles.' : (await response.json()).error;
-        if (request.signal.aborted) return;
-        profilesLoaded = false;
-        profileRows = [];
-        nextCompatibilityPage = null;
-        showProfileAt(0);
-        status.hidden = false;
-        status.textContent = message;
-        profilePageStatus.textContent = '';
-        if (response.status === 403 && !changingConnection && !connectionRead) {
-          void loadConnections({ quiet: true });
-        }
-        return;
-      }
-      if (!response.ok) throw new Error('Profile request failed');
-      const result = await response.json();
-      if (request.signal.aborted) return;
-      const rows = isCompatibility ? result.profiles : result;
-      profileRows.push(...rows);
-      nextCompatibilityPage = isCompatibility ? result.next : null;
-      query = new URLSearchParams(nextCompatibilityPage);
-    } while (nextCompatibilityPage && visibleProfiles().length <= selectIndex);
-
+      return;
+    }
+    if (!response.ok) throw new Error('Profile request failed');
+    const result = await response.json();
+    if (request.signal.aborted) return;
+    profileRows.push(...(isCompatibility ? result.profiles : result));
+    nextCompatibilityPage = isCompatibility && !isSearch ? result.next : null;
+    // Re-enable the controls before restoring focus to the arrow on the next card.
+    feed.request = null;
     profilesLoaded = true;
-    const visible = visibleProfiles();
-    const retained = visible.findIndex((profile) => profile.user_id === selectId);
+    const retained = profileRows.findIndex((profile) => profile.user_id === selectId);
     showProfileAt(retained < 0 ? selectIndex : retained);
-    status.hidden = Boolean(visible.length);
-    status.textContent = profileSearchTerms.length
-      ? 'No profiles match this search.'
-      : isCompatibility && appliedMatchFilters.size
-        ? 'No profiles match your current filters.'
-        : profileView.empty;
+    status.hidden = Boolean(profileRows.length);
+    status.textContent = isSearch
+      ? 'No profiles match this interest or description.'
+      : profileView.empty;
+    if (isSearch && result.mode === 'keywords') {
+      searchStatus.hidden = false;
+      searchStatus.textContent =
+        'Semantic search is temporarily unavailable. Showing keyword results.';
+    }
     profilePageStatus.textContent =
-      append && selectIndex >= visible.length && visible.length
+      append && selectIndex >= profileRows.length && profileRows.length
         ? 'You reached the end of this list.'
         : '';
   } catch {
     if (request.signal.aborted) return;
     if (append) {
       profilePageStatus.textContent = 'Could not load more profiles.';
-      retry.hidden = false;
     } else {
-      status.textContent = 'Could not load profiles.';
-      retry.hidden = false;
+      status.textContent = isSearch ? 'Could not complete the search.' : 'Could not load profiles.';
     }
+    retry.hidden = false;
   } finally {
     if (feed.request === request) {
       feed.request = null;
@@ -892,6 +930,7 @@ async function loadStories() {
 }
 
 function activateTab(tab, refresh = true) {
+  profileListsNav.hidden = tab !== tabs[0] || connectionState?.browsing === 'paused';
   for (const current of tabs) {
     const active = current === tab;
     current.setAttribute('aria-selected', String(active));
@@ -910,9 +949,10 @@ function activateTab(tab, refresh = true) {
 for (const [index, tab] of tabs.entries()) {
   tab.addEventListener('click', () => activateTab(tab));
   tab.addEventListener('keydown', (event) => {
+    const vertical = tabList.getAttribute('aria-orientation') === 'vertical';
     const nextIndex = {
-      ArrowLeft: (index - 1 + tabs.length) % tabs.length,
-      ArrowRight: (index + 1) % tabs.length,
+      [vertical ? 'ArrowUp' : 'ArrowLeft']: (index - 1 + tabs.length) % tabs.length,
+      [vertical ? 'ArrowDown' : 'ArrowRight']: (index + 1) % tabs.length,
       Home: 0,
       End: tabs.length - 1,
     }[event.key];
@@ -928,70 +968,43 @@ for (const button of document.querySelectorAll('[data-retry]')) {
     if (button.dataset.retry === 'stories') {
       void loadStories();
     } else if (nextCompatibilityPage) {
-      void loadProfiles({ append: true, selectIndex: visibleProfiles().length });
+      void loadProfiles({ append: true, selectIndex: profileRows.length });
     } else {
       void loadProfiles();
     }
   });
 }
 
-const narrowBrowse = window.matchMedia('(max-width: 52rem)');
-function setFilterPanel() {
-  browseFilters.open = !narrowBrowse.matches;
+const compactNavigation = window.matchMedia('(max-width: 52rem)');
+function updateTabOrientation() {
+  tabList.setAttribute('aria-orientation', compactNavigation.matches ? 'horizontal' : 'vertical');
 }
-setFilterPanel();
-narrowBrowse.addEventListener('change', setFilterPanel);
+updateTabOrientation();
+compactNavigation.addEventListener('change', updateTabOrientation);
 
-profileList.addEventListener('change', () => {
-  filterError.hidden = true;
-  void loadProfiles();
-});
-
-const scoreFilter = document.querySelector('#score-filter');
-showMatchDetails.addEventListener('change', () => {
-  const enabled = showMatchDetails.checked;
-  scoreFilter.hidden = !enabled;
-  if (!enabled && appliedMatchFilters.has('minScore')) {
-    appliedMatchFilters.delete('minScore');
-    scoreFilter.querySelector('select').value = '0';
-    void loadProfiles({ selectId: visibleProfiles()[profileIndex]?.user_id });
-  } else {
-    renderProfileDetails(visibleProfiles()[profileIndex], profileList.value);
-  }
-});
-
-matchFilters.addEventListener('submit', (event) => {
-  event.preventDefault();
-  const values = new FormData(matchFilters);
-  if (Number(values.get('minAge') || 18) > Number(values.get('maxAge') || 120)) {
-    filterError.hidden = false;
-    filterError.textContent = 'Minimum age must be at most the maximum age.';
-    return;
-  }
-  filterError.hidden = true;
-  if (!showMatchDetails.checked || values.get('minScore') === '0') values.delete('minScore');
-  if (values.get('order') === 'alignment') values.delete('order');
-  appliedMatchFilters = new URLSearchParams([...values].filter(([, value]) => value !== ''));
-  if (narrowBrowse.matches) {
-    browseFilters.open = false;
-    browseFilters.querySelector('summary').focus();
-  }
-  void loadProfiles();
-});
-
-matchFilters.addEventListener('reset', () => {
-  filterError.hidden = true;
-  appliedMatchFilters = new URLSearchParams();
-  void loadProfiles();
-});
+for (const button of profileListsNav.querySelectorAll('[data-list]')) {
+  button.addEventListener('click', () => {
+    const listName = button.dataset.list;
+    if (listName === activeProfileList && !profileSearchQuery && profilesLoaded) return;
+    activeProfileList = listName;
+    for (const item of profileListsNav.querySelectorAll('[data-list]')) {
+      item.setAttribute('aria-pressed', String(item === button));
+    }
+    profileQuery.value = '';
+    profileSearchQuery = '';
+    clearProfileQuery.hidden = true;
+    profileFeedback.hidden = !lastHiddenProfile;
+    void loadProfiles();
+  });
+}
 
 profileQuery.addEventListener('input', () => {
-  clearProfileQuery.hidden = !profileQuery.value && !profileSearchTerms.length;
+  clearProfileQuery.hidden = !profileQuery.value && !profileSearchQuery;
 });
 
 function applyProfileSearch() {
-  profileSearchTerms = searchText(profileQuery.value).split(/\s+/).filter(Boolean);
-  clearProfileQuery.hidden = !profileQuery.value;
+  profileSearchQuery = profileQuery.value.trim();
+  clearProfileQuery.hidden = !profileSearchQuery;
   profileFeedback.hidden = !lastHiddenProfile;
   void loadProfiles();
 }
@@ -1005,11 +1018,9 @@ clearProfileQuery.addEventListener('click', () => {
   profileQuery.focus();
   applyProfileSearch();
 });
-previousProfile.addEventListener('click', () => moveProfile(-1));
-nextProfile.addEventListener('click', () => moveProfile(1));
 reloadProfiles.addEventListener('click', () => {
   profileQuery.focus();
-  void loadProfiles({ selectId: visibleProfiles()[profileIndex]?.user_id });
+  void loadProfiles({ selectId: profileRows[profileIndex]?.user_id });
 });
 undoButton.addEventListener('click', () => {
   if (lastHiddenProfile) changeProfileAction(lastHiddenProfile, 'hidden', false);

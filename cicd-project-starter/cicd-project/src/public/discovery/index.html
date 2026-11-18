@@ -18,234 +18,199 @@
     </header>
 
     <main class="feed-width">
-      <div class="discovery-heading">
-        <h1>Discovery</h1>
-        <div class="feed-tabs" role="tablist" aria-label="Discovery">
-          <button
-            id="profiles-tab"
-            type="button"
-            role="tab"
-            aria-selected="true"
-            aria-controls="profiles-panel"
-          >
-            Profiles
-          </button>
-          <button
-            id="stories-tab"
-            type="button"
-            role="tab"
-            aria-selected="false"
-            aria-controls="stories-panel"
-            tabindex="-1"
-          >
-            Stories
-          </button>
-          <button
-            id="connections-tab"
-            type="button"
-            role="tab"
-            aria-selected="false"
-            aria-controls="connections-panel"
-            tabindex="-1"
-          >
-            Connections
-          </button>
-        </div>
-      </div>
+      <div class="discovery-heading"><h1>Discovery</h1></div>
       <noscript>Enable JavaScript to browse Discovery.</noscript>
-
-      <section id="profiles-panel" role="tabpanel" aria-labelledby="profiles-tab" tabindex="0">
-        <div id="profiles-paused" class="feed-card connection-banner" hidden>
-          <h2>Profile browsing is paused</h2>
-          <p id="profiles-paused-message"></p>
-          <button id="manage-connection" class="feed-control" type="button">
-            View Connections
-          </button>
-        </div>
-        <div id="profile-browser">
-          <div class="browse-toolbar">
-            <h2 id="profiles-heading">Discover people</h2>
-            <form id="profile-search" role="search" aria-label="Search profiles">
-              <label class="visually-hidden" for="profile-query">Search by name or interest</label>
-              <div class="search-field">
-                <input
-                  id="profile-query"
-                  type="search"
-                  maxlength="100"
-                  placeholder="Search by name or interest"
-                />
-                <button id="clear-profile-query" class="clear-profile-query" type="button" hidden>
-                  Clear
-                </button>
-              </div>
-              <button class="feed-control" type="submit">Search</button>
-            </form>
+      <div class="discovery-layout">
+        <nav class="discovery-sidebar" aria-label="Discovery navigation">
+          <div class="feed-tabs" role="tablist" aria-label="Discovery">
+            <button
+              id="profiles-tab"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              aria-controls="profiles-panel"
+            >
+              Profiles
+            </button>
+            <button
+              id="stories-tab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="stories-panel"
+              tabindex="-1"
+            >
+              Stories
+            </button>
+            <button
+              id="connections-tab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="connections-panel"
+              tabindex="-1"
+            >
+              Connections
+            </button>
           </div>
-          <section id="top-picks" class="top-picks" aria-labelledby="top-picks-title" hidden>
-            <h3 id="top-picks-title">Top picks</h3>
-            <div id="top-pick-list" class="top-pick-list"></div>
-          </section>
-          <div class="browse-layout">
-            <details id="browse-filters" class="feed-card browse-filters" open>
-              <summary>Filters</summary>
-              <div class="browse-filter-body">
-                <div class="profile-list-label">
-                  <label for="profile-list">Show</label
-                  ><select id="profile-list">
-                    <option value="compatibility">Compatibility</option>
-                    <option value="saved">Liked profiles</option>
-                    <option value="hidden">Hidden profiles</option>
-                  </select>
-                </div>
-                <div id="compatibility-controls">
-                  <label class="match-toggle">
-                    <input id="show-match-details" type="checkbox" />
-                    Show compatibility scores
-                  </label>
-                  <form id="match-filters" class="match-filters">
-                    <label>
-                      Rank by
-                      <select name="order">
-                        <option value="alignment">Strongest mutual fit</option>
-                        <option value="shared">Most shared interests</option>
-                      </select>
-                    </label>
-                    <label id="score-filter" hidden>
-                      Minimum alignment
-                      <select name="minScore">
-                        <option value="0">Any score</option>
-                        <option value="50">50%</option>
-                        <option value="65">65%</option>
-                        <option value="80">80%</option>
-                        <option value="90">90%</option>
-                      </select>
-                    </label>
-                    <div class="age-range">
-                      <label>
-                        Minimum age
-                        <input name="minAge" type="number" min="18" max="120" placeholder="18" />
-                      </label>
-                      <label>
-                        Maximum age
-                        <input name="maxAge" type="number" min="18" max="120" placeholder="120" />
-                      </label>
-                    </div>
-                    <label class="match-toggle">
-                      <input name="sharedOnly" type="checkbox" value="true" />
-                      At least one shared interest
-                    </label>
-                    <p id="filter-error" class="feed-status" role="alert" hidden></p>
-                    <div class="match-filter-actions">
-                      <button class="feed-control" type="submit">Apply filters</button>
-                      <button class="feed-control" type="reset">Reset</button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            </details>
-            <div class="browse-stage">
-              <nav
-                id="profile-navigation"
-                class="profile-navigation"
-                aria-label="Browse profiles"
-                hidden
-              >
-                <button id="previous-profile" class="feed-control" type="button">
-                  <span aria-hidden="true">‹</span> Previous
-                </button>
-                <p id="profiles-count" class="feed-count"></p>
-                <button id="next-profile" class="feed-control" type="button">
-                  Next <span aria-hidden="true">›</span>
-                </button>
-              </nav>
-              <p id="profile-announcement" class="visually-hidden" role="status"></p>
-              <div id="profile-feedback" class="profile-feedback" hidden>
-                <p id="profile-action-status" class="feed-status" role="status"></p>
-                <button class="feed-control" id="undo-profile-hide" type="button" hidden>
-                  Undo hide
-                </button>
-              </div>
-              <p id="profiles-status" class="feed-status" role="status">Loading profiles.</p>
-              <button class="feed-control" type="button" data-retry="profiles" hidden>Retry</button>
-              <div id="profiles"></div>
-              <p id="profiles-page-status" class="feed-status" role="status"></p>
-              <button class="feed-control" id="reload-profiles" type="button" hidden>
-                Reload profiles
+          <div id="profile-lists" class="profile-lists" role="group" aria-label="Profile lists">
+            <button type="button" data-list="compatibility" aria-pressed="true">
+              Discover people
+            </button>
+            <button type="button" data-list="saved" aria-pressed="false">Liked profiles</button>
+            <button type="button" data-list="hidden" aria-pressed="false">Hidden profiles</button>
+          </div>
+        </nav>
+        <div class="discovery-content">
+          <section id="profiles-panel" role="tabpanel" aria-labelledby="profiles-tab" tabindex="0">
+            <div id="profiles-paused" class="feed-card connection-banner" hidden>
+              <h2>Profile browsing is paused</h2>
+              <p id="profiles-paused-message"></p>
+              <button id="manage-connection" class="feed-control" type="button">
+                View Connections
               </button>
             </div>
-            <aside
-              id="profile-details"
-              class="feed-card browse-details"
-              aria-labelledby="details-title"
-              hidden
-            >
-              <h3 id="details-title">Profile details</h3>
-              <p id="profile-match" class="profile-match-details" hidden></p>
-              <dl class="profile-facts"></dl>
-            </aside>
-          </div>
-        </div>
-      </section>
+            <div id="profile-browser">
+              <div class="browse-toolbar">
+                <h2 id="profiles-heading">Discover people</h2>
+                <form id="profile-search" role="search" aria-label="Search profiles">
+                  <label class="visually-hidden" for="profile-query"
+                    >Search by interests or traits</label
+                  >
+                  <div class="search-field">
+                    <input
+                      id="profile-query"
+                      type="search"
+                      maxlength="300"
+                      placeholder="Try quiet weekends with a book"
+                    />
+                    <button
+                      id="clear-profile-query"
+                      class="clear-profile-query"
+                      type="button"
+                      hidden
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  <button class="feed-control" type="submit">Search</button>
+                </form>
+              </div>
+              <p id="search-status" class="feed-status" role="status" hidden></p>
+              <section id="top-picks" class="top-picks" aria-labelledby="top-picks-title" hidden>
+                <h3 id="top-picks-title">Top picks</h3>
+                <div id="top-pick-list" class="top-pick-list"></div>
+              </section>
+              <div class="browse-layout">
+                <div class="browse-stage">
+                  <p id="profile-announcement" class="visually-hidden" role="status"></p>
+                  <div id="profile-feedback" class="profile-feedback" hidden>
+                    <p id="profile-action-status" class="feed-status" role="status"></p>
+                    <button class="feed-control" id="undo-profile-hide" type="button" hidden>
+                      Undo hide
+                    </button>
+                  </div>
+                  <p id="profiles-status" class="feed-status" role="status">Loading profiles.</p>
+                  <button class="feed-control" type="button" data-retry="profiles" hidden>
+                    Retry
+                  </button>
+                  <div id="profiles"></div>
+                  <p id="profiles-page-status" class="feed-status" role="status"></p>
+                  <button class="feed-control" id="reload-profiles" type="button" hidden>
+                    Reload profiles
+                  </button>
+                </div>
+                <aside
+                  id="profile-details"
+                  class="feed-card browse-details"
+                  aria-labelledby="details-title"
+                  hidden
+                >
+                  <h3 id="details-title">Profile details</h3>
+                  <dl class="profile-facts"></dl>
+                  <section
+                    id="profile-fit"
+                    class="profile-fit"
+                    aria-labelledby="profile-fit-title"
+                    hidden
+                  >
+                    <h3 id="profile-fit-title">Compatibility</h3>
+                    <p id="profile-match" class="profile-match-details"></p>
+                    <dl id="profile-fit-directions" class="profile-facts"></dl>
+                    <p id="profile-common" class="profile-common" hidden></p>
+                  </section>
+                </aside>
+              </div>
+            </div>
+          </section>
 
-      <section
-        id="connections-panel"
-        role="tabpanel"
-        aria-labelledby="connections-tab"
-        tabindex="0"
-        hidden
-      >
-        <div class="feed-toolbar">
-          <h2>Connections</h2>
-          <button id="refresh-connections" class="feed-control" type="button">Refresh</button>
-        </div>
-        <p id="connections-status" class="feed-status" role="status" data-loading="true">
-          Loading connections.
-        </p>
-        <div id="connection-active" hidden></div>
-        <div id="connection-invitations" hidden>
-          <section class="connection-section">
-            <h3>Received</h3>
-            <div id="connection-received"></div>
+          <section
+            id="connections-panel"
+            role="tabpanel"
+            aria-labelledby="connections-tab"
+            tabindex="0"
+            hidden
+          >
+            <div class="feed-toolbar">
+              <h2>Connections</h2>
+              <button id="refresh-connections" class="feed-control" type="button">Refresh</button>
+            </div>
+            <p id="connections-status" class="feed-status" role="status" data-loading="true">
+              Loading connections.
+            </p>
+            <div id="connection-active" hidden></div>
+            <div id="connection-invitations" hidden>
+              <section class="connection-section">
+                <h3>Received</h3>
+                <div id="connection-received"></div>
+              </section>
+              <section class="connection-section">
+                <h3>Sent</h3>
+                <div id="connection-sent"></div>
+              </section>
+              <section id="connection-history" class="connection-section" hidden>
+                <h3>Recent closed invitations</h3>
+                <div id="connection-closed"></div>
+              </section>
+            </div>
           </section>
-          <section class="connection-section">
-            <h3>Sent</h3>
-            <div id="connection-sent"></div>
-          </section>
-          <section id="connection-history" class="connection-section" hidden>
-            <h3>Recent closed invitations</h3>
-            <div id="connection-closed"></div>
-          </section>
-        </div>
-      </section>
-      <dialog
-        id="connection-confirmation"
-        class="feed-card connection-dialog"
-        aria-labelledby="connection-confirmation-title"
-      >
-        <form method="dialog" class="card-body">
-          <h3 id="connection-confirmation-title"></h3>
-          <p class="card-bio"></p>
-          <div class="profile-card-actions">
-            <button class="feed-control" value="cancel" autofocus>Cancel</button>
-            <button class="feed-control connection-primary" value="confirm"></button>
-          </div>
-        </form>
-      </dialog>
+          <dialog
+            id="connection-confirmation"
+            class="feed-card connection-dialog"
+            aria-labelledby="connection-confirmation-title"
+          >
+            <form method="dialog" class="card-body">
+              <h3 id="connection-confirmation-title"></h3>
+              <p class="card-bio"></p>
+              <div class="profile-card-actions">
+                <button class="feed-control" value="cancel" autofocus>Cancel</button>
+                <button class="feed-control connection-primary" value="confirm"></button>
+              </div>
+            </form>
+          </dialog>
 
-      <section id="stories-panel" role="tabpanel" aria-labelledby="stories-tab" tabindex="0" hidden>
-        <div class="feed-toolbar">
-          <h2>Couple stories</h2>
-          <label id="story-filter" class="story-filter" hidden>
-            Author
-            <select id="story-author">
-              <option value="">All authors</option>
-            </select>
-          </label>
+          <section
+            id="stories-panel"
+            role="tabpanel"
+            aria-labelledby="stories-tab"
+            tabindex="0"
+            hidden
+          >
+            <div class="feed-toolbar">
+              <h2>Couple stories</h2>
+              <label id="story-filter" class="story-filter" hidden>
+                Author
+                <select id="story-author">
+                  <option value="">All authors</option>
+                </select>
+              </label>
+            </div>
+            <p id="stories-status" class="feed-status" role="status">Loading stories…</p>
+            <button class="feed-control" type="button" data-retry="stories" hidden>Retry</button>
+            <div id="stories" class="feed-grid story-grid"></div>
+          </section>
         </div>
-        <p id="stories-status" class="feed-status" role="status">Loading stories…</p>
-        <button class="feed-control" type="button" data-retry="stories" hidden>Retry</button>
-        <div id="stories" class="feed-grid story-grid"></div>
-      </section>
+      </div>
     </main>
 
     <template id="profile-card">
@@ -258,11 +223,28 @@
             <h3 id="focused-profile-name" tabindex="-1"></h3>
             <p class="profile-location"></p>
           </div>
+          <button
+            class="profile-arrow profile-arrow-previous"
+            data-step="-1"
+            type="button"
+            aria-label="Previous profile"
+          >
+            <span aria-hidden="true">&#8249;</span>
+          </button>
+          <button
+            class="profile-arrow profile-arrow-next"
+            data-step="1"
+            type="button"
+            aria-label="Next profile"
+          >
+            <span aria-hidden="true">&#8250;</span>
+          </button>
         </div>
         <div class="card-body">
           <div class="profile-card-actions">
             <button class="feed-control profile-connect" type="button">Connect</button>
             <button class="feed-control profile-save" type="button">Like</button>
+            <p class="profile-position feed-count" aria-hidden="true"></p>
           </div>
           <div class="profile-summary">
             <h4>About me</h4>

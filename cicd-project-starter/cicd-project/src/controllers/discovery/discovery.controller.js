@@ -33,6 +33,20 @@ async function listSavedProfiles(req, res) {
   res.json(await discovery.listActionProfiles(getViewerId(req), 'saved'));
 }
 
+async function searchProfiles(req, res) {
+  const viewerId = getViewerId(req);
+  requireJson(req);
+  const query = typeof req.body?.query === 'string' ? req.body.query.trim() : '';
+  if (!/[\p{L}\p{N}]/u.test(query) || query.length > 300) {
+    throw createError(400, 'Enter an interest or description of up to 300 characters.');
+  }
+  res.json(await discovery.searchProfiles(viewerId, query));
+}
+
+async function profileCompatibility(req, res) {
+  res.json(await discovery.profileCompatibility(getViewerId(req), requireId(req.params.profileId)));
+}
+
 async function listHiddenProfiles(req, res) {
   res.json(await discovery.listActionProfiles(getViewerId(req), 'hidden'));
 }
@@ -106,6 +120,8 @@ async function changeProfileAction(req, res) {
 module.exports = {
   listProfiles,
   listCompatibleProfiles,
+  searchProfiles,
+  profileCompatibility,
   listSavedProfiles,
   listHiddenProfiles,
   listCoupleStories,

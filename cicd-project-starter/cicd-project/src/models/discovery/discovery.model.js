@@ -33,6 +33,54 @@ function listCompatibleProfiles(db, snapshotId, position, options) {
   );
 }
 
+const searchableProfile = `p.age_years BETWEEN 18 AND 120
+  AND public.can_match_users($1, p.user_id)
+  AND NOT EXISTS (
+    SELECT 1 FROM public.profile_browse_actions hidden
+    WHERE hidden.viewer_id = $1 AND hidden.target_user_id = p.user_id AND hidden.action = 'hidden'
+  )`;
+
+function searchCandidates(db, viewerId, query, limit) {
+  return db.query(
+    `WITH search AS (
+      SELECT tsvector_to_array(to_tsvector('english', $2)) AS words
+    )
+    SELECT p.user_id, p.bio, p.interests, p.relationship_goal,
+      CASE WHEN cardinality(search.words) = 0 THEN 0 ELSE
+        (SELECT sum(CASE WHEN word = ANY(document.tags) THEN 1.0 ELSE 0.8 END)
+          FROM unnest(search.words) AS word
+          WHERE word = ANY(document.tags) OR word = ANY(document.bio)) / cardinality(search.words)
+      END AS keyword_fit
+    FROM public.discoverable_profiles p CROSS JOIN search
+    CROSS JOIN LATERAL (
+      SELECT tsvector_to_array(to_tsvector('english', replace(replace(
+        concat_ws(' ', array_to_string(p.interests, ' '), p.relationship_goal), '_', ' '), '-', ' '))) AS tags,
+        tsvector_to_array(to_tsvector('english', coalesce(p.bio, ''))) AS bio
+    ) AS document
+    WHERE ${searchableProfile}
+    ORDER BY keyword_fit DESC NULLS LAST, p.user_id
+    LIMIT $3`,
+    [viewerId, query, limit],
+  );
+}
+
+function listSearchResults(db, viewerId, ids) {
+  return db.query(
+    `SELECT ${profileFields}, saved.target_user_id IS NOT NULL AS is_saved
+    FROM unnest($2::uuid[]) WITH ORDINALITY AS result(user_id, position)
+    JOIN public.discoverable_profiles p ON p.user_id = result.user_id
+    LEFT JOIN public.profile_browse_actions saved ON saved.viewer_id = $1
+      AND saved.target_user_id = p.user_id AND saved.action = 'saved'
+    WHERE ${searchableProfile}
+    ORDER BY result.position`,
+    [viewerId, ids],
+  );
+}
+
+function profileCompatibility(db, targetId) {
+  return db.query('SELECT * FROM public.explain_profile_compatibility($1)', [targetId]);
+}
+
 function listActionProfiles(db, viewerId, action) {
   return db.query(
     `SELECT ${profileFields}
@@ -143,6 +191,9 @@ module.exports = {
   browsingState,
   listProfiles,
   listCompatibleProfiles,
+  searchCandidates,
+  listSearchResults,
+  profileCompatibility,
   listActionProfiles,
   addProfileAction,
   removeProfileAction,
