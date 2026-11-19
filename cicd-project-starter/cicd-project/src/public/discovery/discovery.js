@@ -28,7 +28,7 @@ const profileSearch = document.querySelector('#profile-search');
 const profileQuery = document.querySelector('#profile-query');
 const clearProfileQuery = document.querySelector('#clear-profile-query');
 const profileStage = document.querySelector('#profiles');
-const profileDetails = document.querySelector('#profile-details');
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const profileAnnouncement = document.querySelector('#profile-announcement');
 const topPicks = document.querySelector('#top-picks');
 const profilePageStatus = document.querySelector('#profiles-page-status');
@@ -56,6 +56,7 @@ let profileIndex = 0;
 let activeProfileList = 'compatibility';
 let profileSearchQuery = '';
 let compatibilityRead;
+const deckWheel = { last: 0, total: 0, used: false, scrolledDetails: false };
 
 function readableLabel(value) {
   return value.replaceAll(/[_-]+/g, ' ').replace(/^./, (letter) => letter.toUpperCase());
@@ -99,7 +100,8 @@ function profileTone(profile) {
 function updateLikeButton(button, profile, listName) {
   const liked = listName === 'saved' || profile.is_saved === true;
   button.hidden = listName === 'hidden';
-  button.textContent = liked ? '♥ Liked' : '♡ Like';
+  button.querySelector('.action-icon').textContent = liked ? '♥' : '♡';
+  button.querySelector('.action-label').textContent = liked ? 'Liked' : 'Like';
   button.setAttribute('aria-label', `Like ${profile.display_name}`);
   button.setAttribute('aria-pressed', String(liked));
   button.dataset.saved = String(liked);
@@ -108,22 +110,17 @@ function updateLikeButton(button, profile, listName) {
 
 function renderProfile(profile, listName) {
   const card = document.querySelector('#profile-card').content.cloneNode(true);
-  const cover = card.querySelector('.profile-cover');
-  cover.classList.add(profileTone(profile));
-  for (const mark of cover.querySelectorAll('.cover-initial, .profile-cover-avatar')) {
-    mark.textContent = profileInitial(profile);
-  }
-  for (const arrow of cover.querySelectorAll('[data-step]')) {
-    arrow.addEventListener('click', () => {
-      if (arrow.getAttribute('aria-disabled') === 'false') moveProfile(Number(arrow.dataset.step));
-    });
-  }
-  card.querySelector('h3').textContent = [profile.display_name, profile.age_years]
+  const media = card.querySelector('.profile-media');
+  media.classList.add(profileTone(profile));
+  card.querySelector('.profile-monogram').textContent = profileInitial(profile);
+  const name = [profile.display_name, profile.age_years]
     .filter((value) => value != null)
     .join(', ');
-  const location = card.querySelector('.profile-location');
-  location.textContent = profileLocation(profile) || '';
-  location.hidden = !location.textContent;
+  for (const heading of card.querySelectorAll('h2')) heading.textContent = name;
+  for (const location of card.querySelectorAll('.profile-location')) {
+    location.textContent = profileLocation(profile) || '';
+    location.hidden = !location.textContent;
+  }
   const bio = card.querySelector('.card-bio');
   bio.textContent = profile.bio || '';
   card.querySelector('.profile-summary').hidden = !bio.textContent;
@@ -147,8 +144,10 @@ function renderProfile(profile, listName) {
   const hideButton = card.querySelector('.profile-hide');
   hideButton.hidden = listName === 'saved';
   hideButton.disabled = changingProfileAction;
-  hideButton.textContent = listName === 'hidden' ? 'Restore' : 'Hide';
-  hideButton.setAttribute('aria-label', `${hideButton.textContent} ${profile.display_name}`);
+  const hideLabel = listName === 'hidden' ? 'Restore' : 'Hide';
+  hideButton.querySelector('.action-label').textContent = hideLabel;
+  hideButton.querySelector('.action-icon').textContent = listName === 'hidden' ? '↶' : '×';
+  hideButton.setAttribute('aria-label', hideLabel + ' ' + profile.display_name);
   hideButton.addEventListener('click', () =>
     changeProfileAction(profile, 'hidden', listName !== 'hidden'),
   );
@@ -178,51 +177,219 @@ function renderProfile(profile, listName) {
   });
   updateConnectButton(connectButton);
 
-  card.querySelector('.swipe-hint').textContent = connectButton.hidden
-    ? 'Swipe ↓ next · ↑ previous'
-    : 'Swipe ↓ next · ↑ previous · → connect';
-  bindProfileSwipe(cover, connectButton);
+  setupProfileDeck(card.querySelector('.focused-profile'), setupProfileGallery(card, profile));
+  renderProfileDetails(card, profile, listName);
   return card;
 }
 
-function bindProfileSwipe(cover, connectButton) {
-  let origin;
-  cover.addEventListener('pointerdown', (event) => {
-    if (!event.isPrimary || event.button !== 0 || event.target.closest('button')) return;
-    origin = { id: event.pointerId, x: event.clientX, y: event.clientY };
-    cover.setPointerCapture(event.pointerId);
-  });
-  cover.addEventListener('lostpointercapture', (event) => {
-    if (origin?.id === event.pointerId) origin = null;
-  });
-  cover.addEventListener('pointerup', (event) => {
-    if (origin?.id !== event.pointerId) return;
-    const dx = event.clientX - origin.x;
-    const dy = event.clientY - origin.y;
-    origin = null;
-    if (Math.abs(dy) >= 56 && Math.abs(dy) > Math.abs(dx) * 1.2) {
-      moveProfile(dy > 0 ? 1 : -1);
-    } else if (dx >= 56 && dx > Math.abs(dy) * 1.2 && !connectButton.hidden) {
-      connectButton.click();
+function profilePhotos(profile) {
+  // The gallery takes displayable URLs when the profile API supplies them.
+  const attached = Array.isArray(profile.photos) ? profile.photos : [];
+  const ordered = [
+    profile.primary_photo_url || profile.photo_url,
+    ...attached.filter((photo) => photo?.is_primary),
+    ...attached,
+  ];
+  const urls = new Set();
+  for (const photo of ordered) {
+    const source = typeof photo === 'string' ? photo : photo?.url;
+    if (typeof source !== 'string' || !source.trim()) continue;
+    try {
+      const url = new URL(source, document.baseURI);
+      if (
+        (url.protocol === 'https:' ||
+          (url.protocol === 'http:' && url.origin === location.origin)) &&
+        !url.username &&
+        !url.password
+      ) {
+        urls.add(url.href);
+      }
+    } catch {
+      // Leave malformed photo entries out of the gallery.
     }
-  });
+  }
+  return [...urls];
 }
 
-function renderProfileDetails(profile, listName) {
-  compatibilityRead?.abort();
-  compatibilityRead = null;
-  const facts = profileDetails.querySelector('#details-title + .profile-facts');
-  const fit = profileDetails.querySelector('#profile-fit');
-  const summary = fit.querySelector('#profile-match');
-  const directions = fit.querySelector('#profile-fit-directions');
-  const common = fit.querySelector('#profile-common');
-  facts.replaceChildren();
-  directions.replaceChildren();
-  common.hidden = true;
-  if (!profile) {
-    profileDetails.hidden = true;
-    return;
+function setupProfileGallery(card, profile) {
+  const urls = profilePhotos(profile);
+  const image = card.querySelector('.profile-photo');
+  const progress = card.querySelector('.photo-progress');
+  const announcement = card.querySelector('.photo-announcement');
+  const loading = card.querySelector('.photo-loading');
+  const previous = card.querySelector('.photo-arrow-previous');
+  const next = card.querySelector('.photo-arrow-next');
+  let index = 0;
+
+  const segments = urls.map(() => document.createElement('i'));
+  progress.replaceChildren(...segments);
+  progress.hidden = urls.length < 2;
+  previous.hidden = urls.length < 2;
+  next.hidden = urls.length < 2;
+  function showPhoto() {
+    image.hidden = true;
+    if (!urls.length) {
+      announcement.textContent = 'No profile photos available.';
+      return;
+    }
+    loading.hidden = false;
+    loading.dataset.loading = 'true';
+    const count = 'Photo ' + (index + 1) + ' of ' + urls.length;
+    image.alt = count + ' of ' + profile.display_name;
+    announcement.textContent = count;
+    segments.forEach((segment, position) => {
+      segment.classList.toggle('is-current', position === index);
+    });
+    previous.setAttribute('aria-disabled', String(index === 0));
+    next.setAttribute('aria-disabled', String(index === urls.length - 1));
+    image.src = urls[index];
+    if (image.complete && image.naturalWidth > 0) finishPhoto();
   }
+  function finishPhoto() {
+    if (loading.hidden) return;
+    loading.hidden = true;
+    delete loading.dataset.loading;
+    image.hidden = image.naturalWidth === 0;
+    if (image.hidden) announcement.textContent += ' could not be loaded.';
+  }
+  function movePhoto(direction) {
+    const target = index + direction;
+    if (target < 0 || target >= urls.length) return;
+    index = target;
+    showPhoto();
+  }
+  image.addEventListener('load', finishPhoto);
+  image.addEventListener('error', finishPhoto);
+  previous.addEventListener('click', () => movePhoto(-1));
+  next.addEventListener('click', () => movePhoto(1));
+  const media = card.querySelector('.profile-media');
+  media.addEventListener('keydown', (event) => {
+    if (urls.length < 2 || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+    event.preventDefault();
+    movePhoto(event.key === 'ArrowRight' ? 1 : -1);
+  });
+  showPhoto();
+  return movePhoto;
+}
+
+function setupProfileDeck(card, movePhoto) {
+  const media = card.querySelector('.profile-media');
+  const details = card.querySelector('.profile-details');
+  const scroller = details.querySelector('.details-scroll');
+  let showingDetails = false;
+  let touchStart;
+
+  function changeView(view, focusHeading = false) {
+    const incoming = view === 'details' ? details : media;
+    const outgoing = view === 'details' ? media : details;
+    const restoreFocus = focusHeading || outgoing.contains(document.activeElement);
+    showingDetails = view === 'details';
+    card.dataset.view = view;
+    outgoing.inert = true;
+    incoming.inert = false;
+    if (restoreFocus) incoming.querySelector('h2').focus({ preventScroll: true });
+  }
+
+  function atDetailEdge(direction) {
+    return direction < 0
+      ? scroller.scrollTop <= 1
+      : scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1;
+  }
+
+  function boundaryButton(direction) {
+    return card.querySelector('[data-step="' + direction + '"]');
+  }
+
+  function changeDeck(direction) {
+    if (showingDetails && !atDetailEdge(direction)) return false;
+    if (showingDetails !== direction > 0) {
+      changeView(direction > 0 ? 'details' : 'media');
+      return true;
+    }
+    if (boundaryButton(direction).hidden) return false;
+    moveProfile(direction);
+    return true;
+  }
+
+  for (const button of card.querySelectorAll('[data-view]')) {
+    button.addEventListener('click', () => changeView(button.dataset.view, true));
+  }
+  for (const direction of [-1, 1]) {
+    boundaryButton(direction).addEventListener('click', () => moveProfile(direction));
+  }
+
+  card.addEventListener(
+    'wheel',
+    (event) => {
+      if (event.ctrlKey || confirmation.open || Math.abs(event.deltaY) <= Math.abs(event.deltaX))
+        return;
+      const now = performance.now();
+      if (now - deckWheel.last > 170) {
+        deckWheel.total = 0;
+        deckWheel.used = false;
+        deckWheel.scrolledDetails = false;
+      }
+      deckWheel.last = now;
+      if (deckWheel.used) {
+        event.preventDefault();
+        return;
+      }
+      const direction = Math.sign(event.deltaY);
+      const delta = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 100 : 1);
+      if (showingDetails && !atDetailEdge(direction)) {
+        deckWheel.scrolledDetails = true;
+        if (!scroller.contains(event.target)) {
+          event.preventDefault();
+          scroller.scrollTop += delta;
+        }
+        return;
+      }
+      if (deckWheel.scrolledDetails) {
+        event.preventDefault();
+        return;
+      }
+      if (showingDetails === direction > 0 && boundaryButton(direction).hidden) return;
+      deckWheel.total = Math.sign(deckWheel.total) === direction ? deckWheel.total + delta : delta;
+      event.preventDefault();
+      if (Math.abs(deckWheel.total) >= 36) deckWheel.used = changeDeck(direction);
+    },
+    { passive: false },
+  );
+
+  card.addEventListener(
+    'touchstart',
+    (event) => {
+      if (event.touches.length !== 1 || event.target.closest('button, a')) return;
+      const point = event.touches[0];
+      touchStart = { x: point.clientX, y: point.clientY, scroll: scroller.scrollTop };
+    },
+    { passive: true },
+  );
+  card.addEventListener('touchcancel', () => {
+    touchStart = null;
+  });
+  card.addEventListener(
+    'touchend',
+    (event) => {
+      const start = touchStart;
+      touchStart = null;
+      if (!start || event.touches.length || confirmation.open) return;
+      const point = event.changedTouches[0];
+      const dx = point.clientX - start.x;
+      const dy = point.clientY - start.y;
+      if (Math.abs(dy) >= 52 && Math.abs(dy) > 1.25 * Math.abs(dx)) {
+        if (Math.abs(scroller.scrollTop - start.scroll) < 2) changeDeck(dy < 0 ? 1 : -1);
+      } else if (!showingDetails && Math.abs(dx) >= 52 && Math.abs(dx) > 1.25 * Math.abs(dy)) {
+        movePhoto(dx < 0 ? 1 : -1);
+      }
+    },
+    { passive: true },
+  );
+}
+
+function renderProfileDetails(card, profile, listName) {
+  const details = card.querySelector('.profile-details');
+  const facts = details.querySelector('.profile-basics .profile-facts');
   addFact(
     facts,
     'Looking for',
@@ -232,13 +399,15 @@ function renderProfileDetails(profile, listName) {
   addFact(facts, 'Pronouns', profile.pronouns);
   addFact(facts, 'MBTI', profile.mbti_type);
   addFact(facts, 'Zodiac', profile.zodiac_sign);
+  details.querySelector('.profile-basics').hidden = !facts.childElementCount;
 
-  fit.hidden = listName === 'hidden';
-  profileDetails.hidden = !facts.childElementCount && fit.hidden;
-  if (fit.hidden) return;
-  summary.textContent = Number.isInteger(profile.alignment)
-    ? profile.alignment + '% mutual alignment'
-    : 'Checking compatibility…';
+  const fit = details.querySelector('#profile-fit');
+  if (listName === 'hidden') return;
+  fit.hidden = false;
+  const summary = fit.querySelector('#profile-match');
+  const directions = fit.querySelector('#profile-fit-directions');
+  const common = fit.querySelector('#profile-common');
+  setLoading(summary, 'Loading compatibility.');
   void loadProfileCompatibility(profile, summary, directions, common);
 }
 
@@ -274,8 +443,9 @@ async function loadProfileCompatibility(profile, summary, directions, common) {
     common.hidden = !commonGround.length;
   } catch {
     if (request.signal.aborted) return;
-    if (!Number.isInteger(profile.alignment))
-      summary.textContent = 'Compatibility details unavailable.';
+    summary.textContent = Number.isInteger(profile.alignment)
+      ? profile.alignment + '% mutual alignment'
+      : 'Compatibility details unavailable.';
     if (Number.isInteger(profile.shared_count) && profile.shared_count > 0) {
       common.textContent =
         profile.shared_count +
@@ -283,6 +453,7 @@ async function loadProfileCompatibility(profile, summary, directions, common) {
       common.hidden = false;
     }
   } finally {
+    delete summary.dataset.loading;
     if (compatibilityRead === request) compatibilityRead = null;
   }
 }
@@ -300,21 +471,22 @@ function pendingInvitation(memberId) {
 
 function updateConnectButton(button) {
   const pending = pendingInvitation(button.dataset.member);
-  button.textContent = pending
+  const label = pending
     ? pending.direction === 'sent'
       ? 'Request sent'
       : 'View invite'
     : 'Connect';
+  button.querySelector('.action-label').textContent = label;
   button.dataset.pending = String(Boolean(pending));
   button.disabled = changingConnection;
-  button.setAttribute('aria-label', `${button.textContent} · ${button.dataset.name}`);
+  button.setAttribute('aria-label', label + ' ' + button.dataset.name);
 }
 
 function showBrowsingPause() {
   const paused = connectionState?.browsing === 'paused';
   document.querySelector('#profile-browser').hidden = paused;
   document.querySelector('#profiles-paused').hidden = !paused;
-  profileListsNav.hidden = paused || tabs[0].getAttribute('aria-selected') !== 'true';
+  syncBrowseSidebar();
   if (!paused) return;
   feeds.profiles.request?.abort();
   feeds.profiles.request = null;
@@ -324,6 +496,7 @@ function showBrowsingPause() {
   reloadProfiles.hidden = true;
   showProfileAt(0);
   profilePageStatus.textContent = '';
+  delete profilePageStatus.dataset.loading;
   lastHiddenProfile = null;
   profileFeedback.hidden = true;
   document.querySelector('#profiles-paused-message').textContent =
@@ -481,10 +654,12 @@ async function loadConnections({ quiet = false } = {}) {
   connectionRead?.abort();
   const request = new AbortController();
   connectionRead = request;
+  if (!quiet) setLoading(connectionsStatus, 'Loading connections.');
   try {
     const response = await fetch(connectionUrl, { signal: request.signal });
     if (response.status === 401) {
-      if (!quiet) connectionsStatus.textContent = 'Sign in to view your connections.';
+      if (!quiet || connectionsStatus.dataset.loading === 'true')
+        connectionsStatus.textContent = 'Sign in to view your connections.';
       return false;
     }
     if (!response.ok) throw new Error('Connection request failed');
@@ -508,11 +683,14 @@ async function loadConnections({ quiet = false } = {}) {
     }
     return true;
   } catch {
-    if (!quiet && !request.signal.aborted)
+    if ((!quiet || connectionsStatus.dataset.loading === 'true') && !request.signal.aborted)
       connectionsStatus.textContent = 'Could not load connections. Use Refresh to try again.';
     return false;
   } finally {
-    if (connectionRead === request) connectionRead = null;
+    if (connectionRead === request) {
+      connectionRead = null;
+      delete connectionsStatus.dataset.loading;
+    }
   }
 }
 
@@ -559,6 +737,7 @@ async function changeConnection(path, body, message) {
 
 function showProfileFeedback(message) {
   profileFeedback.hidden = false;
+  delete profileActionStatus.dataset.loading;
   profileActionStatus.textContent = message;
   undoButton.hidden = !lastHiddenProfile;
 }
@@ -572,6 +751,9 @@ async function changeProfileAction(profile, action, enable) {
   document.querySelectorAll(actionButtons).forEach((button) => {
     button.disabled = true;
   });
+  profileFeedback.hidden = false;
+  undoButton.hidden = true;
+  setLoading(profileActionStatus, 'Updating profile.');
 
   try {
     const response = await fetch(`${feeds.profiles.url}/${profile.user_id}/${action}`, {
@@ -657,7 +839,7 @@ async function changeProfileAction(profile, action, enable) {
       const target =
         like ||
         (!undoButton.hidden && undoButton) ||
-        profileStage.querySelector('h3') ||
+        profileStage.querySelector('h2') ||
         profileListsNav.querySelector('[aria-pressed="true"]');
       target.focus();
     }
@@ -707,7 +889,6 @@ function setStories(rows) {
 function syncTopPicks(profile) {
   const picks =
     activeProfileList === 'compatibility' && !profileSearchQuery ? profileRows.slice(0, 4) : [];
-  topPicks.hidden = !picks.length;
   const list = topPicks.querySelector('#top-pick-list');
   const key = JSON.stringify(picks.map((pick) => pick.user_id));
   if (list.dataset.picks !== key) {
@@ -735,8 +916,8 @@ function syncTopPicks(profile) {
         copy.append(name, location);
         button.append(avatar, copy);
         button.addEventListener('click', () => {
-          showProfileAt(index);
-          profileStage.querySelector('h3')?.focus();
+          if (index !== profileIndex) showProfileAt(index, { slide: true });
+          profileStage.querySelector('h2')?.focus({ preventScroll: true });
         });
         return button;
       }),
@@ -748,33 +929,71 @@ function syncTopPicks(profile) {
   }
 }
 
-function syncProfileNavigation() {
-  const loading = Boolean(feeds.profiles.request);
-  const previous = profileStage.querySelector('.profile-arrow-previous');
-  const next = profileStage.querySelector('.profile-arrow-next');
-  if (!previous || !next) return;
-  const disablePrevious = loading || profileIndex <= 0;
-  const disableNext = loading || (profileIndex >= profileRows.length - 1 && !nextCompatibilityPage);
-  previous.setAttribute('aria-disabled', String(disablePrevious));
-  previous.tabIndex = disablePrevious ? -1 : 0;
-  next.setAttribute('aria-disabled', String(disableNext));
-  next.tabIndex = disableNext ? -1 : 0;
-  const count = profileStage.querySelector('.profile-position');
-  count.textContent = nextCompatibilityPage
-    ? 'Profile ' + (profileIndex + 1)
-    : profileIndex + 1 + ' of ' + profileRows.length;
+function setLoading(status, message) {
+  status.dataset.loading = 'true';
+  status.textContent = message;
 }
 
-function showProfileAt(index = profileIndex) {
-  const focusedStep = document.activeElement?.dataset.step;
+function syncBrowseSidebar() {
+  const profilesActive = tabs[0].getAttribute('aria-selected') === 'true';
+  const browsing = connectionState?.browsing;
+  const available = profilesActive && browsing !== 'paused' && browsing !== 'unavailable';
+  profileListsNav.hidden = !available;
+  profileSearch.hidden = !available || activeProfileList !== 'compatibility';
+  topPicks.hidden = !available || !topPicks.querySelector('.top-pick');
+}
+
+function syncProfileNavigation() {
+  const loading = Boolean(feeds.profiles.request);
+  const previous = profileStage.querySelector('[data-step="-1"]');
+  const next = profileStage.querySelector('[data-step="1"]');
+  if (!previous || !next) return;
+  previous.hidden = profileIndex <= 0;
+  next.hidden = profileIndex >= profileRows.length - 1 && !nextCompatibilityPage;
+  previous.disabled = loading;
+  next.disabled = loading;
+}
+
+function slideProfiles(outgoing, incoming, direction) {
+  outgoing.inert = true;
+  outgoing.classList.add('profile-leaving');
+  // The departing card stays visible while the incoming card owns its live labels.
+  for (const element of outgoing.querySelectorAll('[id]')) element.removeAttribute('id');
+  profileStage.append(outgoing);
+  const options = { duration: 460, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' };
+  incoming.animate(
+    [{ transform: `translateY(${direction * 100}%)` }, { transform: 'translateY(0)' }],
+    options,
+  );
+  const leaving = outgoing.animate(
+    [{ transform: 'translateY(0)' }, { transform: `translateY(${-direction * 100}%)` }],
+    options,
+  );
+  const remove = () => outgoing.remove();
+  void leaving.finished.then(remove, remove);
+}
+
+function showProfileAt(index = profileIndex, { slide = false } = {}) {
+  const restoreFocus = profileStage.contains(document.activeElement);
+  const outgoing = profileStage.firstElementChild;
+  const previousIndex = profileIndex;
+  compatibilityRead?.abort();
+  compatibilityRead = null;
   profileIndex = Math.max(0, Math.min(index, profileRows.length - 1));
   const profile = profileRows[profileIndex];
   profileStage.replaceChildren(...(profile ? [renderProfile(profile, activeProfileList)] : []));
-  renderProfileDetails(profile, activeProfileList);
+  const incoming = profileStage.firstElementChild;
+  const direction = Math.sign(profileIndex - previousIndex);
+  if (slide && direction && outgoing && incoming && !reducedMotion.matches) {
+    slideProfiles(outgoing, incoming, direction);
+  }
   syncProfileNavigation();
   syncTopPicks(profile);
-  if (focusedStep) {
-    profileStage.querySelector('[data-step="' + focusedStep + '"]')?.focus({ preventScroll: true });
+  syncBrowseSidebar();
+  if (restoreFocus) {
+    const target =
+      profileStage.querySelector('h2') || profileListsNav.querySelector('[aria-pressed="true"]');
+    target?.focus({ preventScroll: true });
   }
   profileAnnouncement.textContent = profile
     ? 'Showing ' + profile.display_name + ', profile ' + (profileIndex + 1) + '.'
@@ -782,11 +1001,12 @@ function showProfileAt(index = profileIndex) {
 }
 
 function moveProfile(direction) {
-  if (feeds.profiles.request || confirmation.open) return;
+  if (feeds.profiles.request || confirmation.open || profileStage.querySelector('.profile-leaving'))
+    return;
   const target = profileIndex + direction;
   if (target < 0) return;
   if (target < profileRows.length) {
-    showProfileAt(target);
+    showProfileAt(target, { slide: true });
     return;
   }
   if (nextCompatibilityPage) void loadProfiles({ append: true, selectIndex: target });
@@ -806,11 +1026,12 @@ async function loadProfiles({ append = false, selectIndex = 0, selectId = null }
   const status = document.querySelector('#profiles-status');
   const retry = document.querySelector('[data-retry="profiles"]');
 
-  profileSearch.hidden = !isCompatibility;
   document.querySelector('#profiles-heading').textContent = isSearch
     ? 'Search results'
     : profileView.heading;
-  profilePageStatus.textContent = append ? 'Loading more profiles.' : '';
+  profilePageStatus.textContent = '';
+  delete profilePageStatus.dataset.loading;
+  if (append) setLoading(profilePageStatus, 'Loading more profiles.');
   reloadProfiles.hidden = true;
   retry.hidden = true;
   if (!append) {
@@ -819,7 +1040,7 @@ async function loadProfiles({ append = false, selectIndex = 0, selectId = null }
     nextCompatibilityPage = null;
     searchStatus.hidden = true;
     status.hidden = false;
-    status.textContent = isSearch ? 'Searching public profiles…' : 'Loading profiles.';
+    setLoading(status, isSearch ? 'Searching public profiles.' : 'Loading profiles.');
     showProfileAt(0);
   } else {
     status.hidden = true;
@@ -864,11 +1085,13 @@ async function loadProfiles({ append = false, selectIndex = 0, selectId = null }
     if (request.signal.aborted) return;
     profileRows.push(...(isCompatibility ? result.profiles : result));
     nextCompatibilityPage = isCompatibility && !isSearch ? result.next : null;
-    // Re-enable the controls before restoring focus to the arrow on the next card.
+    // Re-enable profile navigation before showing the new card.
     feed.request = null;
+    delete profilePageStatus.dataset.loading;
+    delete status.dataset.loading;
     profilesLoaded = true;
     const retained = profileRows.findIndex((profile) => profile.user_id === selectId);
-    showProfileAt(retained < 0 ? selectIndex : retained);
+    showProfileAt(retained < 0 ? selectIndex : retained, { slide: append });
     status.hidden = Boolean(profileRows.length);
     status.textContent = isSearch
       ? 'No profiles match this interest or description.'
@@ -893,6 +1116,8 @@ async function loadProfiles({ append = false, selectIndex = 0, selectId = null }
   } finally {
     if (feed.request === request) {
       feed.request = null;
+      delete profilePageStatus.dataset.loading;
+      delete status.dataset.loading;
       syncProfileNavigation();
     }
   }
@@ -906,7 +1131,7 @@ async function loadStories() {
   const status = document.querySelector('#stories-status');
   const retry = document.querySelector('[data-retry="stories"]');
   status.hidden = false;
-  status.textContent = 'Loading stories.';
+  setLoading(status, 'Loading stories.');
   retry.hidden = true;
   document.querySelector('#stories').replaceChildren();
   document.querySelector('#story-filter').hidden = true;
@@ -925,18 +1150,21 @@ async function loadStories() {
     status.textContent = 'Could not load this section.';
     retry.hidden = false;
   } finally {
-    if (feed.request === request) feed.request = null;
+    if (feed.request === request) {
+      feed.request = null;
+      delete status.dataset.loading;
+    }
   }
 }
 
 function activateTab(tab, refresh = true) {
-  profileListsNav.hidden = tab !== tabs[0] || connectionState?.browsing === 'paused';
   for (const current of tabs) {
     const active = current === tab;
     current.setAttribute('aria-selected', String(active));
     current.tabIndex = active ? 0 : -1;
     document.getElementById(current.getAttribute('aria-controls')).hidden = !active;
   }
+  syncBrowseSidebar();
   if (tab === connectionsTab) {
     if (refresh && !changingConnection) void loadConnections();
   } else {
