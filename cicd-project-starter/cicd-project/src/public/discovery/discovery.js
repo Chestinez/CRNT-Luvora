@@ -23,6 +23,8 @@ const tabList = document.querySelector('[role="tablist"]');
 const tabs = [...tabList.querySelectorAll('[role="tab"]')];
 const profileListsNav = document.querySelector('#profile-lists');
 const searchStatus = document.querySelector('#search-status');
+const searchBlocked = document.querySelector('#search-blocked');
+const editProfileSearch = document.querySelector('#edit-profile-search');
 const reloadProfiles = document.querySelector('#reload-profiles');
 const profileSearch = document.querySelector('#profile-search');
 const profileQuery = document.querySelector('#profile-query');
@@ -1039,6 +1041,9 @@ async function loadProfiles({ append = false, selectIndex = 0, selectId = null }
     profileRows = [];
     nextCompatibilityPage = null;
     searchStatus.hidden = true;
+    searchBlocked.hidden = true;
+    profileQuery.removeAttribute('aria-invalid');
+    profileQuery.removeAttribute('aria-describedby');
     status.hidden = false;
     setLoading(status, isSearch ? 'Searching public profiles.' : 'Loading profiles.');
     showProfileAt(0);
@@ -1065,15 +1070,28 @@ async function loadProfiles({ append = false, selectIndex = 0, selectId = null }
       return;
     }
     if ([400, 401, 403].includes(response.status)) {
-      const message =
-        response.status === 401 ? 'Sign in to view profiles.' : (await response.json()).error;
+      const error = response.status === 401 ? null : await response.json();
       if (request.signal.aborted) return;
+      if (isSearch && response.status === 400 && error?.code === 'blocked_search_term') {
+        profilesLoaded = true;
+        status.hidden = true;
+        searchBlocked.hidden = false;
+        profileQuery.setAttribute('aria-invalid', 'true');
+        profileQuery.setAttribute('aria-describedby', 'search-blocked-help');
+        if (profileSearch.contains(document.activeElement)) {
+          editProfileSearch.focus({ preventScroll: true });
+        }
+        return;
+      }
       profilesLoaded = false;
       profileRows = [];
       nextCompatibilityPage = null;
       showProfileAt(0);
       status.hidden = false;
-      status.textContent = message;
+      status.textContent =
+        response.status === 401
+          ? 'Sign in to view profiles.'
+          : error?.error || 'Could not load profiles.';
       profilePageStatus.textContent = '';
       if (response.status === 403 && !changingConnection && !connectionRead) {
         void loadConnections({ quiet: true });
@@ -1240,6 +1258,10 @@ function applyProfileSearch() {
 profileSearch.addEventListener('submit', (event) => {
   event.preventDefault();
   applyProfileSearch();
+});
+editProfileSearch.addEventListener('click', () => {
+  profileQuery.focus();
+  profileQuery.select();
 });
 clearProfileQuery.addEventListener('click', () => {
   profileQuery.value = '';

@@ -1,6 +1,7 @@
 const createError = require('http-errors');
 const { getViewerId, uuid } = require('../viewer');
 const discovery = require('../../services/discovery/discovery.service');
+const { containsBlockedSearchTerm } = require('../../services/discovery/search-terms');
 
 async function listProfiles(req, res) {
   res.json(await discovery.listProfiles(getViewerId(req)));
@@ -39,6 +40,13 @@ async function searchProfiles(req, res) {
   const query = typeof req.body?.query === 'string' ? req.body.query.trim() : '';
   if (!/[\p{L}\p{N}]/u.test(query) || query.length > 300) {
     throw createError(400, 'Enter an interest or description of up to 300 characters.');
+  }
+  if (containsBlockedSearchTerm(query)) {
+    res.status(400).json({
+      code: 'blocked_search_term',
+      error: 'Use a different word or describe the interests you’re looking for.',
+    });
+    return;
   }
   res.json(await discovery.searchProfiles(viewerId, query));
 }

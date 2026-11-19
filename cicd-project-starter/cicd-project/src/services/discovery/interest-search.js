@@ -49,15 +49,31 @@ function cosine(a, b) {
   return a.reduce((sum, value, i) => sum + value * b[i], 0);
 }
 
+function interestKey(text) {
+  return text
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/^[\s"'“”‘’.,!?]+|[\s"'“”‘’.,!?]+$/gu, '')
+    .replaceAll(/[\s_-]+/g, ' ');
+}
+
 function topMatches(rows) {
   return rows
-    .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id))
+    .sort(
+      (a, b) => Number(b.exact) - Number(a.exact) || b.score - a.score || a.id.localeCompare(b.id),
+    )
     .slice(0, resultLimit)
     .map(({ id }) => id);
 }
 
 async function rank(query, candidates) {
   if (!candidates.length) return { ids: [], mode: 'semantic' };
+  const queryKey = interestKey(query);
+  const keywordScores = candidates.map(({ user_id, interests, keyword_fit }) => ({
+    id: user_id,
+    keyword: Number(keyword_fit),
+    exact: Boolean(queryKey && interests?.some((tag) => interestKey(tag) === queryKey)),
+  }));
   if (Date.now() >= retryAfter) {
     try {
       if (!extractor) {
@@ -71,18 +87,17 @@ async function rank(query, candidates) {
       const documents = candidates.map(publicSearchText);
       const [queryVector] = await embed(extractor, [query]);
       const vectors = await profileVectors(extractor, documents);
-      const scores = candidates.flatMap(({ user_id, keyword_fit }, i) => {
+      const scores = keywordScores.flatMap(({ id, keyword, exact }, i) => {
         const semantic = Math.max(
           0,
           ...documents[i].map((text) => cosine(queryVector, vectors.get(text))),
         );
-        const keyword = Number(keyword_fit);
-        if (semantic < 0.38 && keyword < 0.25) return [];
-        return [{ id: user_id, score: 0.78 * semantic + 0.22 * keyword, keyword }];
+        if (!exact && semantic < 0.38 && keyword < 0.25) return [];
+        return [{ id, score: 0.78 * semantic + 0.22 * keyword, keyword, exact }];
       });
       const best = Math.max(0, ...scores.map(({ score }) => score));
       const relevant = scores.filter(
-        ({ score, keyword }) => score >= best - 0.16 || keyword >= 0.5,
+        ({ score, keyword, exact }) => exact || score >= best - 0.16 || keyword >= 0.5,
       );
       return { ids: topMatches(relevant), mode: 'semantic' };
     } catch (error) {
@@ -97,9 +112,9 @@ async function rank(query, candidates) {
   }
   return {
     ids: topMatches(
-      candidates
-        .filter(({ keyword_fit }) => Number(keyword_fit) >= 0.25)
-        .map(({ user_id, keyword_fit }) => ({ id: user_id, score: Number(keyword_fit) })),
+      keywordScores
+        .filter(({ keyword, exact }) => exact || keyword >= 0.25)
+        .map((match) => ({ ...match, score: match.keyword })),
     ),
     mode: 'keywords',
   };

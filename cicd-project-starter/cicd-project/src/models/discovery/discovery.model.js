@@ -43,7 +43,7 @@ const searchableProfile = `p.age_years BETWEEN 18 AND 120
 function searchCandidates(db, viewerId, query, limit) {
   return db.query(
     `WITH search AS (
-      SELECT tsvector_to_array(to_tsvector('english', $2)) AS words
+      SELECT tsvector_to_array(to_tsvector('english', regexp_replace($2, '[_-]+', ' ', 'g'))) AS words
     )
     SELECT p.user_id, p.bio, p.interests, p.relationship_goal,
       CASE WHEN cardinality(search.words) = 0 THEN 0 ELSE

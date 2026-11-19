@@ -86,6 +86,10 @@
   color: #c3acbd;
 }
 
+.search-field input[aria-invalid='true'] {
+  border-color: var(--rose-pink);
+}
+
 #profile-search .feed-control {
   padding-inline: 0.55rem;
 }
@@ -621,6 +625,40 @@
 #profiles-status[data-loading='true'] {
   min-height: var(--deck-height);
   margin: 0;
+}
+
+.search-blocked {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0.85rem;
+  min-height: var(--deck-height);
+  padding: 1.25rem;
+  text-align: center;
+  background: radial-gradient(ellipse at 50% 40%, #503044, transparent 55%), var(--feed-panel);
+}
+
+.search-blocked h2 {
+  font-size: clamp(1.85rem, 4.5vw, 3rem);
+}
+
+.search-blocked p {
+  max-width: 35ch;
+  margin: 0 0 0.35rem;
+  color: var(--feed-muted);
+}
+
+.mascot-disappointed {
+  --mascot-size: 8rem;
+}
+
+.mascot-disappointed::before {
+  background-position: 97.7% 44.9%;
+}
+
+.mascot-disappointed::before,
+.mascot-disappointed::after {
+  animation-duration: 3.8s;
 }
 
 #profiles-page-status,

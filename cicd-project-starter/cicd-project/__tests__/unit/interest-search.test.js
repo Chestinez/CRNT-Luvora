@@ -62,3 +62,18 @@ test('an unavailable model falls back to relevant keywords and labels the mode',
     warn.mockRestore();
   }
 });
+
+test('an exact interest tag outranks a loose similarity even with hyphens and punctuation', async () => {
+  const { pipeline, rankInterestSearch } = setup();
+  const candidates = [
+    { user_id: 'loose', interests: ['video gaming'], keyword_fit: 0.4 },
+    { user_id: 'exact', interests: ['Board_Games'], keyword_fit: null },
+  ];
+  pipeline.mockResolvedValue(async (texts) => ({
+    tolist: () => texts.map((text) => (text.toLowerCase() === 'board games' ? [0, 1] : [1, 0])),
+  }));
+  await expect(rankInterestSearch('Board-Games!', candidates)).resolves.toEqual({
+    ids: ['exact', 'loose'],
+    mode: 'semantic',
+  });
+});

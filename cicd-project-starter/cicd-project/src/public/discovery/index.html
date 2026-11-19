@@ -108,6 +108,26 @@
                 <p id="profiles-status" class="feed-status" role="status" data-loading="true">
                   Loading profiles.
                 </p>
+                <section
+                  id="search-blocked"
+                  class="feed-card search-blocked"
+                  aria-labelledby="search-blocked-title"
+                  hidden
+                >
+                  <div class="mascot-pulse mascot-disappointed" aria-hidden="true"></div>
+                  <h2 id="search-blocked-title">That search contains a blocked word</h2>
+                  <p id="search-blocked-help">
+                    Use a different word or describe the interests you’re looking for.
+                  </p>
+                  <button
+                    id="edit-profile-search"
+                    class="feed-control"
+                    type="button"
+                    aria-describedby="search-blocked-title search-blocked-help"
+                  >
+                    Edit search
+                  </button>
+                </section>
                 <button class="feed-control" type="button" data-retry="profiles" hidden>
                   Retry
                 </button>
