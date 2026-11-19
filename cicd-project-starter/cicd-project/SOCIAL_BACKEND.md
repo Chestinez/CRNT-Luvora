@@ -40,27 +40,26 @@ transaction ends.
 | `src/models/{posts,discovery}`      | Parameterized SQL                                            |
 | `src/db`                            | Shared PostgreSQL pool and transaction-scoped viewer context |
 
-| Method and route                  | Purpose                                                              |
-| --------------------------------- | -------------------------------------------------------------------- |
-| GET /api/discovery/profiles       | Up to 30 eligible singles, excluding the viewer and hidden profiles |
-| GET /api/discovery/couple-stories | Up to 30 visible published couple stories, newest first              |
-| GET /api/posts/relationships      | Relationships the viewer can use to create a draft                   |
-| GET /api/posts                    | View the viewer's 50 most recently updated couple stories            |
-| POST /api/posts                   | Create a draft with `relationshipId`, `title`, and `caption`         |
-| GET /api/posts/review             | Draft revisions awaiting the viewer's approval                       |
-| PATCH /api/posts/:id              | Edit with `revision`, `title`, and `caption`                         |
-| POST /api/posts/:id/approve       | Approve the supplied `revision`                                      |
-| POST /api/posts/:id/publish       | Publish the approved `revision`                                      |
-| DELETE /api/posts/:id             | Delete the viewer's story at the supplied `revision`                 |
+| Method and route                          | Purpose                                                      |
+| ----------------------------------------- | ------------------------------------------------------------ |
+| GET /api/discovery/profiles               | Up to 30 mutually eligible singles in alphabetical order     |
+| GET /api/discovery/profiles/compatibility | Ranked catalogue of mutually eligible singles                |
+| GET /api/discovery/couple-stories         | Up to 30 visible published couple stories, newest first      |
+| GET /api/posts/relationships              | Relationships the viewer can use to create a draft           |
+| GET /api/posts                            | View the viewer's 50 most recently updated couple stories    |
+| POST /api/posts                           | Create a draft with `relationshipId`, `title`, and `caption` |
+| GET /api/posts/review                     | Draft revisions awaiting the viewer's approval               |
+| PATCH /api/posts/:id                      | Edit with `revision`, `title`, and `caption`                 |
+| POST /api/posts/:id/approve               | Approve the supplied `revision`                              |
+| POST /api/posts/:id/publish               | Publish the approved `revision`                              |
+| DELETE /api/posts/:id                     | Delete the viewer's story at the supplied `revision`         |
 
 Send mutation bodies as JSON. The database trigger moves an edited published
 story back to draft and advances its content revision. Both partners approve
 the new revision before the author publishes again.
 
 Profile cards read the existing `discoverable_profiles` view. Couple stories
-read the existing `posts` table under its RLS policy. The first version uses
-separate lists and fixed limits. Ranking can consume these content sources once
-the matching and story-ranking rules are implemented.
+read the existing `posts` table under its RLS policy.
 
 ## Profile browsing actions
 
@@ -78,8 +77,50 @@ No extra seed is needed. The demo accounts start with empty lists.
 Use `saved` or `hidden` for `:action` and send an empty JSON object for mutations.
 The server gets the viewer from `req.user.id`. Adding an action for an unavailable
 profile returns 404. Repeat writes for a visible profile and repeat deletes
-return 204. Hidden profiles are excluded only from For You. Both lists apply
-the same visibility rules as For You. Saves and hides are independent.
+return 204. Hidden profiles are excluded from For You and Compatibility.
+Saved and Hidden lists apply the profile visibility rules. Saves and hides are independent.
+
+## Compatibility
+
+Apply `db_Schema_Change_log/05_compatibility/001_structured_compatibility.sql`
+after Connections. It uses the existing preference, trait, interest, and
+ranking snapshot tables.
+
+Eligibility checks verification, visibility, blocks and connection state.
+Age, region and relationship goal filter both ways when flagged as hard.
+A configured gender list is a hard requirement. A required numerical trait
+uses exact equality with its stored target. A missing field fails a configured
+requirement. Empty lists and missing preference rows add no restrictions.
+Distance needs location data, so this version uses the available region codes.
+
+For each direction, PostgreSQL averages the available soft categories. Soft
+age fit drops to zero 10 years outside the preferred range. Regions and goals
+use normalized exact matching. Shared interests use intersection over union,
+and numeric traits use their saved importance weights. The harmonic mean
+combines the two directions. An unknown direction uses a neutral 0.5 if the
+other direction has evidence. Pairs with no soft evidence sort last. The
+UUID breaks ties. Invite creation and acceptance use the same hard filters.
+
+Apply `05_compatibility/002_compatibility_filters.sql` to enable the
+Compatibility controls. The first request accepts `order` (`alignment`
+or `shared`), `minScore` (0–100 in steps of 5), `sharedOnly`
+(`true` or `false`), and `minAge`/`maxAge` (18–120). These
+options operate within the eligible pool and do not update stored preferences.
+`shared` sorts by shared interest count and breaks ties by mutual fit.
+Round aggregate alignment to the nearest 5 points for display. The minimum
+alignment filter uses the same rounded value, and an unknown score only passes
+when no minimum is set.
+
+The first request returns `{ profiles, next }` with up to 30 cards. Pass
+`next.snapshot` and `next.after` as query parameters to load the next page.
+Each page rechecks live eligibility and hides, while its order follows the
+15-minute snapshot. The snapshot also stores the rounded alignment and shared
+interest count, so both stay consistent with the sort. Apply filters or reload
+to calculate a new list. Expired or foreign snapshots return 410. The API returns
+public card fields, the viewer's saved state, and these aggregate details.
+The UI combines Discovery ranking in Compatibility and reveals the controls
+with **Show scores and filters**. The older `/profiles` endpoint remains
+available to existing callers.
 
 The table records which actions are active now. Saving and hiding update
 `profile_browse_actions`.

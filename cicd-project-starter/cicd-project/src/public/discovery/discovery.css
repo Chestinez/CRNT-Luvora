@@ -6,6 +6,7 @@
   --text: #fff3fa;
   --surface: #231d2e;
   --border: #55445c;
+  --mascot-art: url('./luvora-mascot.png');
 }
 
 * {
@@ -83,6 +84,75 @@ main a {
 .discovery-card h3,
 .discovery-card p {
   margin: 0;
+}
+
+[data-loading='true'],
+.mascot-pulse {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.35rem;
+  isolation: isolate;
+  text-align: center;
+}
+
+[data-loading='true'] {
+  padding: 1rem;
+}
+
+[data-loading='true']::before,
+[data-loading='true']::after,
+.mascot-pulse::before,
+.mascot-pulse::after {
+  content: '';
+  grid-area: 1 / 1;
+  width: var(--mascot-size, 7rem);
+  aspect-ratio: 1.15;
+  animation: mascot-breathe 2.2s ease-in-out infinite;
+}
+
+[data-loading='true']::before,
+.mascot-pulse::before {
+  background: var(--mascot-art) 3.4% 44% / 655% auto no-repeat;
+  mask-image: radial-gradient(ellipse at center, #000 49%, transparent 76%);
+}
+
+[data-loading='true']::after,
+.mascot-pulse::after {
+  z-index: -1;
+  background: radial-gradient(ellipse, #f37fa060 22%, #f37fa02b 56%, transparent 75%);
+  animation-name: mascot-glow;
+}
+
+@keyframes mascot-breathe {
+  0%,
+  100% {
+    transform: scale(0.96);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+@keyframes mascot-glow {
+  0%,
+  100% {
+    transform: scale(1.12);
+    opacity: 0.62;
+  }
+  50% {
+    transform: scale(1.58);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-loading='true']::before,
+  [data-loading='true']::after,
+  .mascot-pulse::before,
+  .mascot-pulse::after {
+    animation: none;
+  }
 }
 
 .discovery-card p {

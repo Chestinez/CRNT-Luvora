@@ -17,6 +17,46 @@
   font-size: 2rem;
 }
 
+.no-partner {
+  min-height: 23rem;
+  align-content: center;
+  justify-items: center;
+  gap: 0.85rem;
+  text-align: center;
+  background: radial-gradient(ellipse at 50% 30%, #553348, transparent 68%), var(--surface);
+}
+
+.no-partner .mascot-pulse {
+  --mascot-size: 8rem;
+}
+
+.no-partner p {
+  max-width: 34ch;
+  margin: 0;
+  color: var(--muted-lavender);
+}
+
+.discover-link {
+  padding: 0.55rem 1.1rem;
+  border-radius: 2rem;
+  background: var(--rose-pink);
+  color: var(--midnight-plum);
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.discover-link:hover {
+  background: #ffd0dd;
+}
+
+#status[data-loading='true'] {
+  min-height: 10rem;
+}
+
+#status:empty {
+  display: none;
+}
+
 .post-panel label {
   display: grid;
   gap: 0.35rem;

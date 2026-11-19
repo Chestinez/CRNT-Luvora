@@ -1,13 +1,58 @@
 const createError = require('http-errors');
 const { getViewerId, uuid } = require('../viewer');
 const discovery = require('../../services/discovery/discovery.service');
+const { containsBlockedSearchTerm } = require('../../services/discovery/search-terms');
 
 async function listProfiles(req, res) {
   res.json(await discovery.listProfiles(getViewerId(req)));
 }
 
+async function listCompatibleProfiles(req, res) {
+  const viewerId = getViewerId(req);
+  const { snapshot, after, order, minScore, sharedOnly, minAge, maxAge } = req.query;
+  if (snapshot === undefined && after === undefined) {
+    res.json(
+      await discovery.listCompatibleProfiles(viewerId, null, 0, {
+        order,
+        minScore,
+        sharedOnly,
+        minAge,
+        maxAge,
+      }),
+    );
+    return;
+  }
+  if (typeof after !== 'string' || !/^[1-9]\d{0,9}$/.test(after) || Number(after) > 2147483647) {
+    throw createError(400, 'Choose a valid Compatibility page.');
+  }
+  res.json(
+    await discovery.listCompatibleProfiles(viewerId, requireId(snapshot), Number(after), {}),
+  );
+}
+
 async function listSavedProfiles(req, res) {
   res.json(await discovery.listActionProfiles(getViewerId(req), 'saved'));
+}
+
+async function searchProfiles(req, res) {
+  const viewerId = getViewerId(req);
+  requireJson(req);
+  const query = typeof req.body?.query === 'string' ? req.body.query.trim() : '';
+  if (!/[\p{L}\p{N}]/u.test(query) || query.length > 300) {
+    throw createError(400, 'Enter an interest or description of up to 300 characters.');
+  }
+  if (containsBlockedSearchTerm(query)) {
+    res.status(400).json({
+      code: 'blocked_search_term',
+      error: 'Use a different word or describe the interests you’re looking for.',
+    });
+    return;
+  }
+  res.json(await discovery.searchProfiles(viewerId, query));
+}
+
+async function profileCompatibility(req, res) {
+  res.json(await discovery.profileCompatibility(getViewerId(req), requireId(req.params.profileId)));
 }
 
 async function listHiddenProfiles(req, res) {
@@ -82,6 +127,9 @@ async function changeProfileAction(req, res) {
 
 module.exports = {
   listProfiles,
+  listCompatibleProfiles,
+  searchProfiles,
+  profileCompatibility,
   listSavedProfiles,
   listHiddenProfiles,
   listCoupleStories,

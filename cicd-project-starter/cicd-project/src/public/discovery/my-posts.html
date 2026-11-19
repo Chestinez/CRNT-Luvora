@@ -14,8 +14,22 @@
     </header>
     <main class="page-width">
       <h1>My couple stories</h1>
-      <p id="status" class="intro" role="status">Loading stories…</p>
+      <p id="status" class="intro" role="status" data-loading="true">Loading stories…</p>
       <section id="workspace" hidden aria-label="Manage your stories">
+        <section
+          id="no-partner"
+          class="post-panel no-partner"
+          aria-labelledby="no-partner-title"
+          hidden
+        >
+          <div class="mascot-pulse" aria-hidden="true"></div>
+          <h2 id="no-partner-title">You don’t have a partner yet</h2>
+          <p>
+            Couple stories are for people in an active relationship. Head to Discover to meet
+            someone you’d like to share a story with.
+          </p>
+          <a class="discover-link" href="./">Browse profiles</a>
+        </section>
         <form id="composer" method="post" class="post-panel" hidden>
           <h2 id="composer-heading">New draft</h2>
           <label id="relationship-field"
@@ -31,12 +45,12 @@
             <button id="cancel-edit" type="button" class="secondary" hidden>Cancel edit</button>
           </div>
         </form>
-        <section class="post-panel" aria-labelledby="review-heading">
+        <section id="review-panel" class="post-panel" aria-labelledby="review-heading">
           <h2 id="review-heading">Stories to approve</h2>
           <p id="review-empty" hidden>No stories waiting for your approval.</p>
           <div id="review-list"></div>
         </section>
-        <section class="post-panel" aria-labelledby="saved-heading">
+        <section id="saved-panel" class="post-panel" aria-labelledby="saved-heading">
           <h2 id="saved-heading">Your recent stories</h2>
           <button id="reload" type="button" class="secondary">Reload stories</button>
           <p id="empty" hidden>No stories yet.</p>

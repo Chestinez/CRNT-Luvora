@@ -6,160 +6,300 @@
     <title>Discovery | Luvora</title>
     <link rel="stylesheet" href="./discovery.css" />
     <link rel="stylesheet" href="./feed.css" />
+    <link rel="stylesheet" href="./browse.css" />
     <script src="./discovery.js" defer></script>
   </head>
-  <body class="feed-page">
-    <header class="masthead">
-      <div class="feed-width feed-header">
-        <a class="wordmark" href="./">Luvora<span aria-hidden="true"> &#9825;</span></a>
-        <a class="manage-link" href="./my-posts.html">My couple stories</a>
-      </div>
-    </header>
-
+  <body class="feed-page discovery-page">
     <main class="feed-width">
-      <h1>Discovery</h1>
-      <div class="feed-tabs" role="tablist" aria-label="Discovery">
-        <button
-          id="profiles-tab"
-          type="button"
-          role="tab"
-          aria-selected="true"
-          aria-controls="profiles-panel"
-        >
-          For You
-        </button>
-        <button
-          id="stories-tab"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          aria-controls="stories-panel"
-          tabindex="-1"
-        >
-          Stories
-        </button>
-        <button
-          id="connections-tab"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          aria-controls="connections-panel"
-          tabindex="-1"
-        >
-          Connections
-        </button>
-      </div>
       <noscript>Enable JavaScript to browse Discovery.</noscript>
-
-      <section id="profiles-panel" role="tabpanel" aria-labelledby="profiles-tab" tabindex="0">
-        <div id="profiles-paused" class="feed-card connection-banner" hidden>
-          <h2>Profile browsing is paused</h2>
-          <p id="profiles-paused-message"></p>
-          <button id="manage-connection" class="feed-control" type="button">
-            View Connections
-          </button>
-        </div>
-        <div id="profile-browser">
-          <div class="feed-toolbar">
-            <h2 id="profiles-heading">Discover people</h2>
-            <label class="story-filter">
-              Show
-              <select id="profile-list">
-                <option value="profiles">For You</option>
-                <option value="saved">Saved profiles</option>
-                <option value="hidden">Hidden profiles</option>
-              </select>
-            </label>
-            <p id="profiles-count" class="feed-count"></p>
-          </div>
-          <div id="profile-feedback" class="profile-feedback" hidden>
-            <p id="profile-action-status" class="feed-status" role="status"></p>
-            <button class="feed-control" id="undo-profile-hide" type="button" hidden>
-              Undo hide
+      <div class="discovery-layout">
+        <nav class="discovery-sidebar" aria-label="Discovery navigation">
+          <a class="sidebar-brand" href="./" aria-label="Luvora Discovery"
+            ><span class="mascot-mark" aria-hidden="true"></span
+            ><span class="wordmark">Luvora</span></a
+          >
+          <form id="profile-search" role="search" aria-label="Search profiles">
+            <label class="visually-hidden" for="profile-query">Search by interests or traits</label>
+            <div class="search-field">
+              <input
+                id="profile-query"
+                type="search"
+                maxlength="300"
+                placeholder="Search interests"
+              />
+              <button
+                id="clear-profile-query"
+                class="clear-profile-query"
+                type="button"
+                aria-label="Clear search"
+                title="Clear search"
+                hidden
+              >
+                ×
+              </button>
+            </div>
+            <button class="feed-control" type="submit">Search</button>
+          </form>
+          <div class="feed-tabs" role="tablist" aria-label="Discovery">
+            <button
+              id="profiles-tab"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              aria-controls="profiles-panel"
+            >
+              Discover
+            </button>
+            <button
+              id="stories-tab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="stories-panel"
+              tabindex="-1"
+            >
+              Stories
+            </button>
+            <button
+              id="connections-tab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="connections-panel"
+              tabindex="-1"
+            >
+              Connections
             </button>
           </div>
-          <p id="profiles-status" class="feed-status" role="status">Loading profiles…</p>
-          <button class="feed-control" type="button" data-retry="profiles" hidden>Retry</button>
-          <div id="profiles" class="feed-grid"></div>
-        </div>
-      </section>
-
-      <section
-        id="connections-panel"
-        role="tabpanel"
-        aria-labelledby="connections-tab"
-        tabindex="0"
-        hidden
-      >
-        <div class="feed-toolbar">
-          <h2>Connections</h2>
-          <button id="refresh-connections" class="feed-control" type="button">Refresh</button>
-        </div>
-        <p id="connections-status" class="feed-status" role="status" data-loading="true">
-          Loading connections.
-        </p>
-        <div id="connection-active" hidden></div>
-        <div id="connection-invitations" hidden>
-          <section class="connection-section">
-            <h3>Received</h3>
-            <div id="connection-received"></div>
-          </section>
-          <section class="connection-section">
-            <h3>Sent</h3>
-            <div id="connection-sent"></div>
-          </section>
-          <section id="connection-history" class="connection-section" hidden>
-            <h3>Recent closed invitations</h3>
-            <div id="connection-closed"></div>
-          </section>
-        </div>
-      </section>
-      <dialog
-        id="connection-confirmation"
-        class="feed-card connection-dialog"
-        aria-labelledby="connection-confirmation-title"
-      >
-        <form method="dialog" class="card-body">
-          <h3 id="connection-confirmation-title"></h3>
-          <p class="card-bio"></p>
-          <div class="profile-card-actions">
-            <button class="feed-control" value="cancel" autofocus>Cancel</button>
-            <button class="feed-control connection-primary" value="confirm"></button>
+          <div id="profile-lists" class="profile-lists" role="group" aria-label="Profile lists">
+            <button type="button" data-list="compatibility" aria-pressed="true">
+              Discover people
+            </button>
+            <button type="button" data-list="saved" aria-pressed="false">Liked profiles</button>
+            <button type="button" data-list="hidden" aria-pressed="false">Hidden profiles</button>
           </div>
-        </form>
-      </dialog>
+          <details id="top-picks" class="top-picks" hidden>
+            <summary>Top picks</summary>
+            <div id="top-pick-list" class="top-pick-list"></div>
+          </details>
+          <a class="sidebar-link" href="./my-posts.html">My couple stories</a>
+        </nav>
+        <div class="discovery-content">
+          <section id="profiles-panel" role="tabpanel" aria-labelledby="profiles-tab" tabindex="0">
+            <div id="profiles-paused" class="feed-card connection-banner" hidden>
+              <h2>Profile browsing is paused</h2>
+              <p id="profiles-paused-message"></p>
+              <button id="manage-connection" class="feed-control" type="button">
+                View Connections
+              </button>
+            </div>
+            <div id="profile-browser">
+              <h1 id="profiles-heading" class="visually-hidden">Discover people</h1>
+              <p id="search-status" class="feed-status" role="status" hidden></p>
 
-      <section id="stories-panel" role="tabpanel" aria-labelledby="stories-tab" tabindex="0" hidden>
-        <div class="feed-toolbar">
-          <h2>Couple stories</h2>
-          <label id="story-filter" class="story-filter" hidden>
-            Author
-            <select id="story-author">
-              <option value="">All authors</option>
-            </select>
-          </label>
+              <div class="browse-stage">
+                <p id="profile-announcement" class="visually-hidden" role="status"></p>
+                <div id="profile-feedback" class="profile-feedback" hidden>
+                  <p id="profile-action-status" class="feed-status" role="status"></p>
+                  <button class="feed-control" id="undo-profile-hide" type="button" hidden>
+                    Undo hide
+                  </button>
+                </div>
+                <p id="profiles-status" class="feed-status" role="status" data-loading="true">
+                  Loading profiles.
+                </p>
+                <section
+                  id="search-blocked"
+                  class="feed-card search-blocked"
+                  aria-labelledby="search-blocked-title"
+                  hidden
+                >
+                  <div class="mascot-pulse mascot-disappointed" aria-hidden="true"></div>
+                  <h2 id="search-blocked-title">That search contains a blocked word</h2>
+                  <p id="search-blocked-help">
+                    Use a different word or describe the interests you’re looking for.
+                  </p>
+                  <button
+                    id="edit-profile-search"
+                    class="feed-control"
+                    type="button"
+                    aria-describedby="search-blocked-title search-blocked-help"
+                  >
+                    Edit search
+                  </button>
+                </section>
+                <button class="feed-control" type="button" data-retry="profiles" hidden>
+                  Retry
+                </button>
+                <div id="profiles"></div>
+                <p id="profiles-page-status" class="feed-status" role="status"></p>
+                <button class="feed-control" id="reload-profiles" type="button" hidden>
+                  Reload profiles
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section
+            id="connections-panel"
+            role="tabpanel"
+            aria-labelledby="connections-tab"
+            tabindex="0"
+            hidden
+          >
+            <div class="feed-toolbar">
+              <h2>Connections</h2>
+              <button id="refresh-connections" class="feed-control" type="button">Refresh</button>
+            </div>
+            <p id="connections-status" class="feed-status" role="status" data-loading="true">
+              Loading connections.
+            </p>
+            <div id="connection-active" hidden></div>
+            <div id="connection-invitations" hidden>
+              <section class="connection-section">
+                <h3>Received</h3>
+                <div id="connection-received"></div>
+              </section>
+              <section class="connection-section">
+                <h3>Sent</h3>
+                <div id="connection-sent"></div>
+              </section>
+              <section id="connection-history" class="connection-section" hidden>
+                <h3>Recent closed invitations</h3>
+                <div id="connection-closed"></div>
+              </section>
+            </div>
+          </section>
+          <dialog
+            id="connection-confirmation"
+            class="feed-card connection-dialog"
+            aria-labelledby="connection-confirmation-title"
+          >
+            <form method="dialog" class="card-body">
+              <h3 id="connection-confirmation-title"></h3>
+              <p class="card-bio"></p>
+              <div class="profile-card-actions">
+                <button class="feed-control" value="cancel" autofocus>Cancel</button>
+                <button class="feed-control connection-primary" value="confirm"></button>
+              </div>
+            </form>
+          </dialog>
+
+          <section
+            id="stories-panel"
+            role="tabpanel"
+            aria-labelledby="stories-tab"
+            tabindex="0"
+            hidden
+          >
+            <div class="feed-toolbar">
+              <h2>Couple stories</h2>
+              <label id="story-filter" class="story-filter" hidden>
+                Author
+                <select id="story-author">
+                  <option value="">All authors</option>
+                </select>
+              </label>
+            </div>
+            <p id="stories-status" class="feed-status" role="status" data-loading="true">
+              Loading stories…
+            </p>
+            <button class="feed-control" type="button" data-retry="stories" hidden>Retry</button>
+            <div id="stories" class="feed-grid story-grid"></div>
+          </section>
         </div>
-        <p id="stories-status" class="feed-status" role="status">Loading stories…</p>
-        <button class="feed-control" type="button" data-retry="stories" hidden>Retry</button>
-        <div id="stories" class="feed-grid story-grid"></div>
-      </section>
+      </div>
     </main>
 
     <template id="profile-card">
-      <article class="feed-card">
-        <div class="profile-cover" aria-hidden="true"><span></span></div>
-        <div class="card-body">
-          <h3></h3>
-          <p class="card-bio"></p>
-          <dl class="profile-facts"></dl>
-          <ul class="feed-tags" aria-label="Interests"></ul>
-          <div class="profile-card-actions">
-            <button class="feed-control profile-connect" type="button">Connect</button>
-            <button class="feed-control profile-stories" type="button">View stories</button>
-            <button class="feed-control profile-save" type="button">Save</button>
-            <button class="feed-control profile-hide" type="button">Hide</button>
+      <article class="feed-card focused-profile" aria-labelledby="focused-profile-name">
+        <section class="profile-media profile-deck-panel" aria-label="Profile gallery">
+          <img class="profile-photo" alt="" referrerpolicy="no-referrer" hidden />
+          <div class="profile-monogram" aria-hidden="true"></div>
+          <div class="profile-media-shade" aria-hidden="true"></div>
+          <p class="photo-loading feed-status" hidden>Loading photo.</p>
+          <div class="photo-progress" aria-hidden="true" hidden></div>
+          <p class="photo-announcement visually-hidden" role="status"></p>
+          <button
+            class="photo-arrow photo-arrow-previous"
+            type="button"
+            aria-label="Previous photo"
+            hidden
+          >
+            <span aria-hidden="true">&#8249;</span>
+          </button>
+          <button class="photo-arrow photo-arrow-next" type="button" aria-label="Next photo" hidden>
+            <span aria-hidden="true">&#8250;</span>
+          </button>
+          <button class="deck-prompt deck-prompt-top" type="button" data-step="-1" hidden>
+            <span aria-hidden="true">↑</span> Previous profile
+          </button>
+          <div class="media-content">
+            <div class="profile-identity">
+              <h2 id="focused-profile-name" tabindex="-1"></h2>
+              <p class="profile-location"></p>
+            </div>
+            <div class="profile-card-actions media-actions" aria-label="Profile actions">
+              <button class="profile-action profile-hide" type="button">
+                <span class="action-icon" aria-hidden="true">×</span
+                ><span class="action-label">Hide</span>
+              </button>
+              <button class="profile-action profile-save" type="button">
+                <span class="action-icon" aria-hidden="true">♡</span
+                ><span class="action-label">Like</span>
+              </button>
+              <button class="profile-action profile-connect" type="button">
+                <span class="action-icon" aria-hidden="true">✦</span
+                ><span class="action-label">Connect</span>
+              </button>
+            </div>
+            <button class="deck-prompt deck-prompt-bottom" type="button" data-view="details">
+              <span aria-hidden="true">↓</span> Profile details
+            </button>
           </div>
-        </div>
+        </section>
+        <section class="profile-details profile-deck-panel" aria-labelledby="details-title" inert>
+          <div class="details-navigation">
+            <button class="deck-prompt deck-prompt-top" type="button" data-view="media">
+              <span aria-hidden="true">↑</span> Back to photos
+            </button>
+          </div>
+          <div class="details-scroll" tabindex="0">
+            <header class="details-header">
+              <h2 id="details-title" tabindex="-1"></h2>
+              <p class="profile-location"></p>
+            </header>
+            <section class="profile-summary">
+              <h3>About me</h3>
+              <p class="card-bio"></p>
+            </section>
+            <section class="profile-basics">
+              <h3>The basics</h3>
+              <dl class="profile-facts"></dl>
+            </section>
+            <section class="profile-interests">
+              <h3>Interests</h3>
+              <ul class="feed-tags" aria-label="Interests"></ul>
+            </section>
+            <section
+              id="profile-fit"
+              class="profile-fit"
+              aria-labelledby="profile-fit-title"
+              hidden
+            >
+              <h3 id="profile-fit-title">Compatibility</h3>
+              <p id="profile-match" class="profile-match-details" role="status"></p>
+              <dl id="profile-fit-directions" class="profile-facts"></dl>
+              <p id="profile-common" class="profile-common" hidden></p>
+            </section>
+            <button class="feed-control profile-stories" type="button">View stories</button>
+          </div>
+          <div class="details-navigation">
+            <button class="deck-prompt deck-prompt-bottom" type="button" data-step="1" hidden>
+              <span aria-hidden="true">↓</span> Next profile
+            </button>
+          </div>
+        </section>
       </article>
     </template>
 

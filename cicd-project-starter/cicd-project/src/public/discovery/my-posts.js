@@ -1,5 +1,6 @@
 const statusLine = document.querySelector('#status');
 const workspace = document.querySelector('#workspace');
+const noPartner = document.querySelector('#no-partner');
 const composer = document.querySelector('#composer');
 const heading = document.querySelector('#composer-heading');
 const cancelEdit = document.querySelector('#cancel-edit');
@@ -10,6 +11,7 @@ const relationshipSelect = composer.elements.relationshipId;
 
 let editing = null;
 let busy = false;
+let hasPartner = false;
 
 async function request(path, { method = 'GET', body } = {}) {
   const options = { method };
@@ -46,9 +48,11 @@ function showSignedOut() {
   statusLine.textContent = 'Sign in to manage your couple stories.';
 }
 
-async function run(action) {
+async function run(action, loadingMessage = 'Loading stories.') {
   if (busy) return;
   busy = true;
+  statusLine.dataset.loading = 'true';
+  statusLine.textContent = loadingMessage;
   const buttons = [...document.querySelectorAll('main button')];
   buttons.forEach((button) => {
     button.disabled = true;
@@ -63,6 +67,7 @@ async function run(action) {
     }
   } finally {
     busy = false;
+    delete statusLine.dataset.loading;
     buttons.forEach((button) => {
       button.disabled = false;
     });
@@ -115,7 +120,7 @@ function renderPost(post) {
           await request(`${route}/publish`, { method: 'POST', body });
           if (editing?.id === post.id) resetComposer();
           await loadPosts('Post published.');
-        }),
+        }, 'Publishing story.'),
       ),
     );
   }
@@ -127,7 +132,7 @@ function renderPost(post) {
         await request(route, { method: 'DELETE', body });
         if (editing?.id === post.id) resetComposer();
         await loadPosts('Post deleted.');
-      });
+      }, 'Deleting story.');
     }),
   );
   card.append(title, caption, state, actions);
@@ -148,22 +153,23 @@ function renderReview(post) {
         body: { revision: post.content_revision },
       });
       await loadPosts('Story approved.');
-    }),
+    }, 'Approving story.'),
   );
   card.append(title, caption, approve);
   return card;
 }
 
 async function loadPosts(message) {
-  // Report a completed write even if the subsequent refresh fails.
-  if (message) statusLine.textContent = message;
   try {
     const [posts, review] = await Promise.all([request('/'), request('/review')]);
     document.querySelector('#review-list').replaceChildren(...review.map(renderReview));
     document.querySelector('#review-empty').hidden = review.length > 0;
     postList.replaceChildren(...posts.map(renderPost));
     empty.hidden = posts.length > 0;
-    if (!message) statusLine.textContent = 'Posts loaded.';
+    noPartner.hidden = hasPartner;
+    document.querySelector('#review-panel').hidden = !hasPartner && !review.length;
+    document.querySelector('#saved-panel').hidden = !hasPartner && !posts.length;
+    statusLine.textContent = message ?? '';
   } catch (error) {
     if (error.status === 401 || !message) throw error;
     statusLine.textContent = `${message} Could not refresh the list. Use Reload posts.`;
@@ -191,21 +197,22 @@ composer.addEventListener('submit', (event) => {
       resetComposer();
       await loadPosts('Draft saved.');
     }
-  });
+  }, 'Saving story.');
 });
 
-cancelEdit.addEventListener('click', resetComposer);
-document.querySelector('#reload').addEventListener('click', () => run(() => loadPosts()));
-
-run(async () => {
+async function loadWorkspace() {
+  const selected = relationshipSelect.value;
   const relationships = await request('/relationships');
   relationshipSelect.replaceChildren(
     ...relationships.map(({ id, partner_name }) => new Option(partner_name, id)),
   );
-  resetComposer();
+  if (relationships.some(({ id }) => id === selected)) relationshipSelect.value = selected;
+  hasPartner = relationships.length > 0;
+  if (!editing) composer.hidden = !hasPartner;
   workspace.hidden = false;
   await loadPosts();
-  if (!relationships.length) {
-    statusLine.textContent = 'You need an active relationship to start a couple story.';
-  }
-});
+}
+
+cancelEdit.addEventListener('click', resetComposer);
+document.querySelector('#reload').addEventListener('click', () => run(loadWorkspace));
+run(loadWorkspace);

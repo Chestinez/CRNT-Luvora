@@ -35,7 +35,8 @@ async function main() {
               to_regclass('public.discoverable_profiles') IS NOT NULL AS profiles,
               to_regclass('public.posts') IS NOT NULL AS posts,
               to_regclass('public.profile_browse_actions') IS NOT NULL AS actions,
-              to_regprocedure('public.send_match_request(uuid)') IS NOT NULL AS connections`,
+              to_regprocedure('public.send_match_request(uuid)') IS NOT NULL AS connections,
+              to_regprocedure('public.list_compatible_profiles(uuid,integer,jsonb)') IS NOT NULL AS compatibility`,
     );
     if (!schema.users || !schema.profiles || !schema.posts) {
       throw new Error('Luvora schema missing. Follow the Supabase setup in luvora-demo-runner.md.');
@@ -45,6 +46,9 @@ async function main() {
     }
     if (!schema.connections) {
       throw new Error('Run 04_connections/001_connections.sql from db_Schema_Change_log.');
+    }
+    if (!schema.compatibility) {
+      throw new Error('Run both numbered SQL migrations in db_Schema_Change_log/05_compatibility.');
     }
 
     const emails = demoAccounts.map(({ email }) => email);

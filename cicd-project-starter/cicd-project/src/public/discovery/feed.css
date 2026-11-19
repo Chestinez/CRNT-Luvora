@@ -36,7 +36,9 @@
 
 .manage-link,
 .feed-control,
-.story-filter select {
+.story-filter select,
+.match-filters select,
+.match-filters input[type='number'] {
   padding: 0.55rem 0.85rem;
   border: 1px solid var(--feed-line);
   border-radius: 0.6rem;
@@ -48,7 +50,8 @@
 }
 
 .feed-control,
-.story-filter select {
+.story-filter select,
+.match-filters select {
   cursor: pointer;
 }
 
@@ -336,6 +339,40 @@
 
 .feed-page [hidden] {
   display: none !important;
+}
+
+.match-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.match-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.65rem 1rem;
+  margin-block: 0.65rem 1rem;
+}
+
+.match-filters > label:not(.match-toggle) {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.match-filters input[type='number'] {
+  width: 6rem;
+}
+
+.match-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.profile-match-details {
+  color: var(--rose-pink);
+  font-size: 0.875rem;
 }
 
 @media (max-width: 480px) {
