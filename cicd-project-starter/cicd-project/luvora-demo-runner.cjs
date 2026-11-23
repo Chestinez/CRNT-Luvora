@@ -36,7 +36,8 @@ async function main() {
               to_regclass('public.posts') IS NOT NULL AS posts,
               to_regclass('public.profile_browse_actions') IS NOT NULL AS actions,
               to_regprocedure('public.send_match_request(uuid)') IS NOT NULL AS connections,
-              to_regprocedure('public.list_compatible_profiles(uuid,integer,jsonb)') IS NOT NULL AS compatibility`,
+              to_regprocedure('public.list_compatible_profiles(uuid,integer,jsonb)') IS NOT NULL AS compatibility,
+              to_regprocedure('public.manage_profile_learning(boolean,boolean)') IS NOT NULL AS learning`,
     );
     if (!schema.users || !schema.profiles || !schema.posts) {
       throw new Error('Luvora schema missing. Follow the Supabase setup in luvora-demo-runner.md.');
@@ -49,6 +50,11 @@ async function main() {
     }
     if (!schema.compatibility) {
       throw new Error('Run both numbered SQL migrations in db_Schema_Change_log/05_compatibility.');
+    }
+    if (!schema.learning) {
+      throw new Error(
+        'Run 06_profile_learning/001_profile_learning.sql from db_Schema_Change_log.',
+      );
     }
 
     const emails = demoAccounts.map(({ email }) => email);

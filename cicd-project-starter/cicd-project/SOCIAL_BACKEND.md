@@ -122,8 +122,35 @@ The UI combines Discovery ranking in Compatibility and reveals the controls
 with **Show scores and filters**. The older `/profiles` endpoint remains
 available to existing callers.
 
-The table records which actions are active now. Saving and hiding update
-`profile_browse_actions`.
+## For You learning
+
+Apply `db_Schema_Change_log/06_profile_learning/001_profile_learning.sql` after
+the Compatibility migrations. Discovery uses the profile's existing
+`allow_behavioural_personalization` setting, which defaults to off.
+
+| Request                                                  | Behavior                                                           |
+| -------------------------------------------------------- | ------------------------------------------------------------------ |
+| `GET /api/discovery/profiles/learning`                   | Read the current `{ enabled }` setting                             |
+| `PUT /api/discovery/profiles/learning`                   | Set consent with `{ "enabled": true }` or `{ "enabled": false }`   |
+| `DELETE /api/discovery/profiles/learning`                | Clear learned evidence with an empty JSON object                   |
+| `GET /api/discovery/profiles/compatibility?mode=for-you` | Rank and page For You. Include the mode with every cursor request. |
+
+Each new Like or sent request captures the target's interests and numeric
+traits at the time of the action. Requests weigh `1.0` and Likes weigh `0.20`.
+The strongest action counts once per target. Unliking removes the Like's
+evidence. Hiding suppresses that target's evidence until restored. The learner
+uses actions recorded after opting in. Opens and searches carry zero weight.
+
+The 30- and 120-day windows contribute 65% and 35% of the learned estimate.
+Confidence grows with decayed evidence, distinct profiles, and distinct action
+days. Learning can supply up to 30% of each directional score before the
+harmonic mean combines the pair. Each person supplies learned evidence only
+while opted in. Displayed compatibility and score filters use stated alignment.
+With no learning evidence, For You uses the compatibility order.
+
+Refresh starts a new snapshot. Reset and opt-out clear the viewer's evidence
+and expire any For You snapshot that could have used it. Likes, hides, and
+connection records are independent of the learned evidence.
 
 ## Connections
 

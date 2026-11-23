@@ -44,12 +44,14 @@ Open each SQL file below in **SQL Editor** and run the whole file as
    If you already applied step 7, start here.
 9. Run `db_Schema_Change_log/05_compatibility/003_compatibility_explanations.sql`.
    It adds the two preference-fit levels and shared interests shown in Discovery.
-10. In your development database, run
-   `db_Schema_Change_log/05_compatibility/Luvora_Compatibility_Demo_Seed.sql`.
-   This optional seed adds 80 fictional profiles with varied ages, interests,
-   regions, and goals. Run it directly in SQL Editor. The seed creates its
-   own placeholder Auth rows, so you can browse them from the existing Aisha
-   and Daniel demo sessions. Reruns skip existing fixtures.
+10. Run `db_Schema_Change_log/06_profile_learning/001_profile_learning.sql`.
+    It adds the optional For You learner and its recommendation settings.
+11. In your development database, run
+    `db_Schema_Change_log/05_compatibility/Luvora_Compatibility_Demo_Seed.sql`.
+    This optional seed adds 80 fictional profiles with varied ages, interests,
+    regions, and goals. Run it directly in SQL Editor. The seed creates its
+    own placeholder Auth rows, so you can browse them from the existing Aisha
+    and Daniel demo sessions. Reruns skip existing fixtures.
 
 ## Set the database connection
 
@@ -95,6 +97,13 @@ previous and next arrows. On touch screens, you can also swipe down or up.
 Try searching for `coffee` or `time on nature trails`. The first search can
 take longer while the server downloads the MiniLM model. The server runs
 the model locally and can show keyword results if the model is unavailable.
+
+Open **Recommendation settings** on Discover people and enable **Personalize
+For You**. Like several profiles with similar interests, then choose **Refresh
+For You**. A sent connection request carries more weight than a Like. Use
+**Show compatibility order** to compare the same pool with the structured
+order. **Reset learned preferences** clears the learner and preserves your
+Liked and Hidden lists.
 
 To try the handshake, use the arrows in Aisha's **Discover people** list to
 find Daniel, then choose **Like** and **Connect** on his card.
