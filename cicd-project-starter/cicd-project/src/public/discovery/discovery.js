@@ -26,6 +26,13 @@ const searchStatus = document.querySelector('#search-status');
 const searchBlocked = document.querySelector('#search-blocked');
 const editProfileSearch = document.querySelector('#edit-profile-search');
 const reloadProfiles = document.querySelector('#reload-profiles');
+const profileLearning = document.querySelector('#profile-learning');
+const profileLearningToggle = document.querySelector('#profile-learning-enabled');
+const rankingControl = document.querySelector('#profile-ranking-control');
+const compatibilityOnly = document.querySelector('#compatibility-only');
+const refreshForYou = document.querySelector('#refresh-for-you');
+const resetProfileLearning = document.querySelector('#reset-profile-learning');
+const profileLearningStatus = document.querySelector('#profile-learning-status');
 const profileSearch = document.querySelector('#profile-search');
 const profileQuery = document.querySelector('#profile-query');
 const clearProfileQuery = document.querySelector('#clear-profile-query');
@@ -57,6 +64,8 @@ let profileRows = [];
 let profileIndex = 0;
 let activeProfileList = 'compatibility';
 let profileSearchQuery = '';
+let learningEnabled = null;
+let learningRead;
 let compatibilityRead;
 const deckWheel = { last: 0, total: 0, used: false, scrolledDetails: false };
 
@@ -942,7 +951,68 @@ function syncBrowseSidebar() {
   const available = profilesActive && browsing !== 'paused' && browsing !== 'unavailable';
   profileListsNav.hidden = !available;
   profileSearch.hidden = !available || activeProfileList !== 'compatibility';
+  profileLearning.hidden =
+    !available ||
+    activeProfileList !== 'compatibility' ||
+    Boolean(profileSearchQuery) ||
+    learningEnabled === null;
   topPicks.hidden = !available || !topPicks.querySelector('.top-pick');
+}
+
+function showLearningSetting(enabled) {
+  learningEnabled = enabled;
+  profileLearningToggle.checked = enabled;
+  rankingControl.hidden = !enabled;
+  if (!enabled) compatibilityOnly.checked = false;
+  refreshForYou.hidden = !enabled || compatibilityOnly.checked;
+  resetProfileLearning.hidden = !enabled;
+  syncBrowseSidebar();
+}
+
+function readProfileLearning() {
+  if (learningEnabled !== null) return;
+  learningRead ??= fetch(feeds.profiles.url + '/learning')
+    .then(async (response) => {
+      if (!response.ok) return;
+      const { enabled } = await response.json();
+      showLearningSetting(enabled);
+    })
+    .catch(() => {})
+    .finally(() => {
+      learningRead = null;
+    });
+  return learningRead;
+}
+
+async function changeProfileLearning(reset) {
+  const controls = [profileLearningToggle, compatibilityOnly, refreshForYou, resetProfileLearning];
+  for (const control of controls) control.disabled = true;
+  profileLearningStatus.hidden = false;
+  setLoading(profileLearningStatus, 'Updating recommendation settings.');
+  try {
+    const response = await fetch(feeds.profiles.url + '/learning', {
+      method: reset ? 'DELETE' : 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(reset ? {} : { enabled: profileLearningToggle.checked }),
+    });
+    if (!response.ok) throw new Error('Learning settings update failed');
+    const { enabled } = await response.json();
+    showLearningSetting(enabled);
+    profileLearningStatus.textContent = reset
+      ? 'Learned preferences reset.'
+      : enabled
+        ? 'For You personalization is on.'
+        : 'Personalization is off and learned preferences were cleared.';
+    if (activeProfileList === 'compatibility' && !profileSearchQuery && !profileLearning.hidden) {
+      void loadProfiles();
+    }
+  } catch {
+    profileLearningToggle.checked = learningEnabled;
+    profileLearningStatus.textContent = 'Could not update recommendation settings. Try again.';
+  } finally {
+    delete profileLearningStatus.dataset.loading;
+    for (const control of controls) control.disabled = false;
+  }
 }
 
 function syncProfileNavigation() {
@@ -1053,7 +1123,13 @@ async function loadProfiles({ append = false, selectIndex = 0, selectId = null }
   }
 
   try {
-    const endpoint = append ? url + '?' + new URLSearchParams(nextCompatibilityPage) : url;
+    const params = new URLSearchParams(append ? nextCompatibilityPage : undefined);
+    if (isCompatibility && !isSearch) {
+      await readProfileLearning();
+      if (request.signal.aborted) return;
+      if (learningEnabled && !compatibilityOnly.checked) params.set('mode', 'for-you');
+    }
+    const endpoint = params.size ? url + '?' + params : url;
     const options = { signal: request.signal };
     if (isSearch) {
       options.method = 'POST';
@@ -1272,6 +1348,13 @@ reloadProfiles.addEventListener('click', () => {
   profileQuery.focus();
   void loadProfiles({ selectId: profileRows[profileIndex]?.user_id });
 });
+profileLearningToggle.addEventListener('change', () => changeProfileLearning(false));
+compatibilityOnly.addEventListener('change', () => {
+  refreshForYou.hidden = compatibilityOnly.checked;
+  void loadProfiles();
+});
+resetProfileLearning.addEventListener('click', () => changeProfileLearning(true));
+refreshForYou.addEventListener('click', () => loadProfiles());
 undoButton.addEventListener('click', () => {
   if (lastHiddenProfile) changeProfileAction(lastHiddenProfile, 'hidden', false);
 });

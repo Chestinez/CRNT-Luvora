@@ -9,7 +9,10 @@ async function listProfiles(req, res) {
 
 async function listCompatibleProfiles(req, res) {
   const viewerId = getViewerId(req);
-  const { snapshot, after, order, minScore, sharedOnly, minAge, maxAge } = req.query;
+  const { snapshot, after, order, minScore, sharedOnly, minAge, maxAge, mode } = req.query;
+  if (mode !== undefined && mode !== 'compatibility' && mode !== 'for-you') {
+    throw createError(400, 'Choose a valid profile ranking mode.');
+  }
   if (snapshot === undefined && after === undefined) {
     res.json(
       await discovery.listCompatibleProfiles(viewerId, null, 0, {
@@ -18,6 +21,7 @@ async function listCompatibleProfiles(req, res) {
         sharedOnly,
         minAge,
         maxAge,
+        mode,
       }),
     );
     return;
@@ -26,8 +30,21 @@ async function listCompatibleProfiles(req, res) {
     throw createError(400, 'Choose a valid Compatibility page.');
   }
   res.json(
-    await discovery.listCompatibleProfiles(viewerId, requireId(snapshot), Number(after), {}),
+    await discovery.listCompatibleProfiles(viewerId, requireId(snapshot), Number(after), { mode }),
   );
+}
+
+async function manageProfileLearning(req, res) {
+  const viewerId = getViewerId(req);
+  const reset = req.method === 'DELETE';
+  let enabled = null;
+  if (req.method !== 'GET') requireJson(req);
+  if (req.method === 'PUT') {
+    enabled = req.body?.enabled;
+    if (typeof enabled !== 'boolean')
+      throw createError(400, 'Choose whether to personalize For You.');
+  }
+  res.json(await discovery.manageProfileLearning(viewerId, enabled, reset));
 }
 
 async function listSavedProfiles(req, res) {
@@ -128,6 +145,7 @@ async function changeProfileAction(req, res) {
 module.exports = {
   listProfiles,
   listCompatibleProfiles,
+  manageProfileLearning,
   searchProfiles,
   profileCompatibility,
   listSavedProfiles,

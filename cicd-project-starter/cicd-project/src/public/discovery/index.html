@@ -96,6 +96,24 @@
             <div id="profile-browser">
               <h1 id="profiles-heading" class="visually-hidden">Discover people</h1>
               <p id="search-status" class="feed-status" role="status" hidden></p>
+              <details id="profile-learning" class="feed-card" hidden>
+                <summary>Recommendation settings</summary>
+                <p>Use your Likes and connection requests to estimate mutual fit in For You.</p>
+                <label
+                  ><input id="profile-learning-enabled" type="checkbox" /> Personalize For
+                  You</label
+                >
+                <label id="profile-ranking-control" hidden>
+                  <input id="compatibility-only" type="checkbox" /> Show compatibility order
+                </label>
+                <button id="refresh-for-you" class="feed-control" type="button" hidden>
+                  Refresh For You
+                </button>
+                <button id="reset-profile-learning" class="feed-control" type="button" hidden>
+                  Reset learned preferences
+                </button>
+                <p id="profile-learning-status" class="feed-status" role="status" hidden></p>
+              </details>
 
               <div class="browse-stage">
                 <p id="profile-announcement" class="visually-hidden" role="status"></p>

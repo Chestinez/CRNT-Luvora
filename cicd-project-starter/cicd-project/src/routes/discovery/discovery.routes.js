@@ -4,6 +4,11 @@ const controller = require('../../controllers/discovery/discovery.controller');
 const router = express.Router();
 router.get('/profiles', controller.listProfiles);
 router.get('/profiles/compatibility', controller.listCompatibleProfiles);
+router
+  .route('/profiles/learning')
+  .get(controller.manageProfileLearning)
+  .put(controller.manageProfileLearning)
+  .delete(controller.manageProfileLearning);
 router.post('/profiles/search', controller.searchProfiles);
 router.get('/profiles/:profileId/compatibility', controller.profileCompatibility);
 router.get('/profiles/saved', controller.listSavedProfiles);

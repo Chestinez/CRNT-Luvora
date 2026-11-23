@@ -33,6 +33,10 @@ function listCompatibleProfiles(db, snapshotId, position, options) {
   );
 }
 
+function manageProfileLearning(db, enabled, reset) {
+  return db.query('SELECT public.manage_profile_learning($1, $2) AS enabled', [enabled, reset]);
+}
+
 const searchableProfile = `p.age_years BETWEEN 18 AND 120
   AND public.can_match_users($1, p.user_id)
   AND NOT EXISTS (
@@ -191,6 +195,7 @@ module.exports = {
   browsingState,
   listProfiles,
   listCompatibleProfiles,
+  manageProfileLearning,
   searchCandidates,
   listSearchResults,
   profileCompatibility,

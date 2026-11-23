@@ -49,6 +49,19 @@ async function listCompatibleProfiles(viewerId, snapshotId, position, options) {
   }
 }
 
+async function manageProfileLearning(viewerId, enabled, reset) {
+  try {
+    const { rows } = await withViewer(viewerId, (db) =>
+      model.manageProfileLearning(db, enabled, reset),
+    );
+    return rows[0];
+  } catch (error) {
+    if (error.code === 'LV403') throw createError(403, error.message);
+    if (error.code === '42883') throw createError(503, 'Profile learning is unavailable.');
+    throw error;
+  }
+}
+
 async function searchProfiles(viewerId, query) {
   const candidates = await withProfileBrowsing(viewerId, async (db) => {
     const { rows } = await model.searchCandidates(db, viewerId, query, 120);
@@ -139,6 +152,7 @@ function listCoupleStories(viewerId) {
 module.exports = {
   listProfiles,
   listCompatibleProfiles,
+  manageProfileLearning,
   searchProfiles,
   profileCompatibility,
   listActionProfiles,
