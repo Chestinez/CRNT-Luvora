@@ -15,6 +15,8 @@ const {
   validateRevision,
 } = require('../../services/compatibility/compatibility.validation');
 
+const { recommendations } = require('../../services/compatibility/compatibility.recommendations');
+
 const router = express.Router();
 
 async function readAssessment(client, userId, lock = false) {
@@ -39,10 +41,7 @@ function checkExistingAssessment(assessment, revision) {
   }
 
   if (assessment.revision !== revision) {
-    throw createError(
-      409,
-      'Your answers changed in another tab. Reload before saving again.',
-    );
+    throw createError(409, 'Your answers changed in another tab. Reload before saving again.');
   }
 }
 
@@ -51,6 +50,10 @@ router.use((req, res, next) => {
   res.set('Cache-Control', 'no-store');
   res.locals.viewerId = getViewerId(req);
   next();
+});
+
+router.get('/recommendations', async (_req, res) => {
+  res.json(await recommendations(res.locals.viewerId));
 });
 
 // Read the question bank.
@@ -67,9 +70,7 @@ router.get('/questions', (_req, res) => {
 router.get('/assessment', async (_req, res) => {
   const userId = res.locals.viewerId;
 
-  const assessment = await withViewer(userId, (client) =>
-    readAssessment(client, userId),
-  );
+  const assessment = await withViewer(userId, (client) => readAssessment(client, userId));
 
   res.json({ assessment });
 });
@@ -89,10 +90,7 @@ router.post('/assessment', async (_req, res) => {
     );
 
     if (!rows.length) {
-      throw createError(
-        409,
-        'An assessment already exists. Reload to resume it.',
-      );
+      throw createError(409, 'An assessment already exists. Reload to resume it.');
     }
 
     return rows[0];
