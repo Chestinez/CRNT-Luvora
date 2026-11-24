@@ -1,4 +1,10 @@
 const profileLists = {
+  compatible: {
+    heading: 'Compatibility recommendations',
+    path: '',
+    empty:
+      'No scored recommendations yet. Complete your preferences and wait for other eligible members to complete theirs. Distance limits cannot be checked yet.',
+  },
   profiles: { heading: 'Discover people', path: '', empty: 'No profiles available.' },
   saved: {
     heading: 'Saved profiles',
@@ -81,6 +87,24 @@ function renderProfile(profile, listName) {
     profile.relationship_goal && readableLabel(profile.relationship_goal),
   );
   addFact(facts, 'MBTI', profile.mbti_type);
+  if (profile.compatibility?.status === 'ready') {
+    const details = document.createElement('details');
+    const summary = document.createElement('summary');
+    summary.textContent = `${profile.compatibility.score}% preference alignment`;
+    details.append(summary);
+    const explanation = document.createElement('p');
+    explanation.textContent =
+      'A comparison of questionnaire preferences, not a prediction of relationship success.';
+    details.append(explanation);
+    const breakdown = document.createElement('ul');
+    for (const item of profile.compatibility.breakdown) {
+      const row = document.createElement('li');
+      row.textContent = `${item.label}: ${item.score}%`;
+      breakdown.append(row);
+    }
+    details.append(breakdown);
+    card.querySelector('.card-body').append(details);
+  }
   addFact(facts, 'Zodiac', profile.zodiac_sign);
   addFact(facts, 'Gender', profile.gender && readableLabel(profile.gender));
   addFact(facts, 'Pronouns', profile.pronouns);
@@ -519,7 +543,12 @@ async function loadFeed(name) {
     document.querySelector('#profiles-heading').textContent = profileView.heading;
   } else document.querySelector('#story-filter').hidden = true;
   try {
-    const url = name === 'profiles' ? feed.url + profileView.path : feed.url;
+    const url =
+      name === 'profiles' && listName === 'compatible'
+        ? '/api/compatibility/recommendations'
+        : name === 'profiles'
+          ? feed.url + profileView.path
+          : feed.url;
     const response = await fetch(url, { signal: request.signal });
     if (request.signal.aborted) return;
     if (response.status === 401) {
