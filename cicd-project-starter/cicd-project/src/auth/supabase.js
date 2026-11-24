@@ -15,7 +15,7 @@ function configuration() {
   return { url: parsed.origin, key };
 }
 
-async function request(endpoint, { method = 'GET', body, token } = {}) {
+async function request(endpoint, { method = 'GET', body, token, representation = false } = {}) {
   const { url, key } = configuration();
   let response;
   try {
@@ -23,6 +23,7 @@ async function request(endpoint, { method = 'GET', body, token } = {}) {
       method,
       headers: {
         apikey: key,
+        ...(representation ? { Prefer: 'return=representation' } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(body ? { 'Content-Type': 'application/json' } : {}),
       },

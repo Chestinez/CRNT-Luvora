@@ -265,3 +265,32 @@ test('app serves the new pages and protects the existing social endpoints', asyn
   expect((await request(realApp).get('/api/posts')).status).toBe(401);
   expect(global.fetch).not.toHaveBeenCalled();
 });
+
+test('profile updates only the verified user and trims the name', async () => {
+  reply(200, user);
+  reply(200, [{ display_name: 'New name' }]);
+  const result = await post('profile', { displayName: ' New name ', user_id: 'someone-else' }).set(
+    'Cookie',
+    'luvora_access=verified-access-token',
+  );
+  expect(result.status).toBe(200);
+  expect(result.body.displayName).toBe('New name');
+  const [url, options] = global.fetch.mock.calls[1];
+  expect(url).toContain(user.id);
+  expect(JSON.parse(options.body)).toEqual({ display_name: 'New name' });
+});
+
+test('profile rejects blank names without writing', async () => {
+  reply(200, user);
+  const result = await post('profile', { displayName: ' ' }).set(
+    'Cookie',
+    'luvora_access=verified-access-token',
+  );
+  expect(result.status).toBe(400);
+  expect(global.fetch).toHaveBeenCalledTimes(1);
+});
+
+test('profile requires a session', async () => {
+  expect((await post('profile', { displayName: 'Name' })).status).toBe(401);
+  expect(global.fetch).not.toHaveBeenCalled();
+});

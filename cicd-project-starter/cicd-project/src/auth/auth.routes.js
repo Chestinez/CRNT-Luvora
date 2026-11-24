@@ -2,7 +2,14 @@ const express = require('express');
 const createError = require('http-errors');
 const supabase = require('./supabase');
 const { validateCredentials } = require('./validation');
-const { identify, sameOrigin, readToken, setSession, clearSession } = require('./session');
+const {
+  identify,
+  requireMfa,
+  sameOrigin,
+  readToken,
+  setSession,
+  clearSession,
+} = require('./session');
 const { assurance } = require('./assurance');
 const createMfaRouter = require('./mfa.routes');
 
@@ -115,6 +122,39 @@ function createAuthRouter() {
   router.get('/me', identify, (req, res) =>
     res.json({ user: publicUser(req.user), ...req.authState }),
   );
+  router.get('/profile', identify, requireMfa, async (req, res) => {
+    const rows = await supabase.request(
+      `/rest/v1/profiles?user_id=eq.${encodeURIComponent(req.user.id)}&select=display_name`,
+      { token: readToken(req) },
+    );
+    if (!rows[0]) throw createError(404, 'Your profile is not available yet.');
+    res.json({ displayName: rows[0].display_name });
+  });
+  router.post('/profile', identify, requireMfa, async (req, res) => {
+    const name = typeof req.body?.displayName === 'string' ? req.body.displayName.trim() : '';
+    if (
+      !name ||
+      Array.from(name).length > 80 ||
+      Array.from(name).some(
+        (character) => character.codePointAt(0) < 32 || character.codePointAt(0) === 127,
+      )
+    ) {
+      return res
+        .status(400)
+        .json({ error: 'Enter a name between 1 and 80 characters without control characters.' });
+    }
+    const rows = await supabase.request(
+      `/rest/v1/profiles?user_id=eq.${encodeURIComponent(req.user.id)}&select=display_name`,
+      {
+        method: 'PATCH',
+        token: readToken(req),
+        body: { display_name: name },
+        representation: true,
+      },
+    );
+    if (!rows[0]) throw createError(404, 'Your profile is not available yet.');
+    res.json({ displayName: rows[0].display_name });
+  });
   router.post('/logout', async (req, res) => {
     const token = readToken(req);
     // Clear the browser session even if the provider is temporarily unavailable.

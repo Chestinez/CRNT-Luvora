@@ -1,0 +1,84 @@
+:root[data-theme] {
+  color-scheme: dark;
+  --bg: #191622;
+  --surface: #241e2e;
+  --rose: #f6a4b1;
+  --text: #fff3fa;
+  --muted: #c3b3c9;
+  --line: #55445c;
+  --midnight-plum: var(--bg);
+  --rose-pink: var(--rose);
+  --muted-lavender: var(--muted);
+  --border: var(--line);
+  background: var(--bg);
+  color: var(--text);
+}
+:root[data-theme='ocean'] {
+  --bg: #101e2b;
+  --surface: #192d3e;
+  --rose: #93d6fc;
+  --text: #eff8ff;
+  --muted: #b1c9db;
+  --line: #45647a;
+}
+:root[data-theme='forest'] {
+  --bg: #12221d;
+  --surface: #1d332a;
+  --rose: #a3e2b5;
+  --text: #effbf2;
+  --muted: #b7cfc0;
+  --line: #486b59;
+}
+:root[data-theme='lavender'] {
+  --bg: #201a30;
+  --surface: #302742;
+  --rose: #d0b7ff;
+  --text: #f8f2ff;
+  --muted: #c9bbdc;
+  --line: #685581;
+}
+[data-theme] .feed-page {
+  --feed-muted: var(--muted);
+  --feed-panel: var(--surface);
+  --feed-line: var(--line);
+}
+[data-theme] body {
+  background: var(--bg);
+  color: var(--text);
+}
+[data-theme] a {
+  color: var(--rose);
+}
+[data-theme] .primary-button {
+  background: var(--rose);
+  color: var(--bg);
+}
+[data-theme] .primary-button:hover {
+  filter: brightness(1.1);
+}
+[data-theme] input,
+[data-theme] select {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+#color-theme {
+  display: block;
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.8rem;
+  border-radius: 0.6rem;
+  font: inherit;
+}
+[data-theme] .story-panel {
+  background:
+    radial-gradient(
+      ellipse at 20% 75%,
+      color-mix(in srgb, var(--rose) 20%, transparent),
+      transparent 60%
+    ),
+    var(--surface);
+}
+[data-theme] .notice {
+  background: var(--surface);
+}

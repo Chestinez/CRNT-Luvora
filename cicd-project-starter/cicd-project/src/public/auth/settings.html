@@ -8,6 +8,9 @@
     <link rel="stylesheet" href="/auth/auth.css" />
     <link rel="stylesheet" href="/auth/settings.css" />
     <script src="/auth/auth.js" defer></script>
+    <script src="/auth/settings.js" defer></script>
+    <link rel="stylesheet" href="/theme.css" />
+    <script src="/theme.js"></script>
   </head>
   <body data-page="account">
     <main class="account-shell settings-shell">
@@ -25,11 +28,44 @@
             <p id="account-greeting"></p>
             <p class="account-email" id="account-email"></p>
             <a href="/auth/account.html">View your account</a>
+            <form id="profile-form">
+              <p><label for="profile-name">Profile name</label></p>
+              <input
+                id="profile-name"
+                name="displayName"
+                autocomplete="nickname"
+                required
+                disabled
+                aria-describedby="profile-help"
+              />
+              <p id="profile-help">Your Discovery profile name. Use 1–80 characters.</p>
+              <button class="secondary-button" id="save-profile" type="submit" disabled>
+                Save profile name
+              </button>
+              <button class="secondary-button" id="reload-profile" type="button">
+                Reload profile
+              </button>
+              <p id="profile-status" role="status" aria-live="polite"></p>
+            </form>
           </section>
           <section class="settings-section" aria-labelledby="security-heading">
             <h2 id="security-heading">Security</h2>
             <p>Manage your authenticator and two-factor authentication.</p>
             <a id="security-state" href="/auth/security.html">Account security</a>
+          </section>
+          <section class="settings-section" aria-labelledby="appearance-heading">
+            <h2 id="appearance-heading">Appearance</h2>
+            <p id="theme-help">
+              Choose the colors for Luvora. Applies immediately and is remembered in this browser.
+            </p>
+            <label for="color-theme">Website color</label>
+            <select id="color-theme" aria-describedby="theme-help">
+              <option value="rose">Rose (default)</option>
+              <option value="ocean">Ocean blue</option>
+              <option value="forest">Forest green</option>
+              <option value="lavender">Lavender</option>
+            </select>
+            <p id="theme-status" role="status" aria-live="polite"></p>
           </section>
           <section class="settings-section" aria-labelledby="preferences-heading">
             <h2 id="preferences-heading">Preferences <span class="upcoming">Coming soon</span></h2>
