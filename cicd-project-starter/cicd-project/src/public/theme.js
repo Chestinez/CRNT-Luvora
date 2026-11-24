@@ -1,5 +1,12 @@
 (() => {
   const key = 'luvora-color-theme';
+  const densityKey = 'luvora-layout-density';
+  function applyDensity(value) {
+    const density = value === 'compact' ? 'compact' : 'comfortable';
+    document.documentElement.dataset.density = density;
+    const select = document.querySelector('#layout-density');
+    if (select) select.value = density;
+  }
   const contrastKey = 'luvora-high-contrast';
   function applyContrast(value) {
     const contrast = value === 'high' ? 'high' : 'standard';
@@ -48,16 +55,33 @@
       applySize(localStorage.getItem(sizeKey));
       applyMotion(localStorage.getItem(motionKey));
       applyContrast(localStorage.getItem(contrastKey));
+      applyDensity(localStorage.getItem(densityKey));
     } catch {
       apply('rose');
       applyMode('dark');
       applySize('default');
       applyMotion('system');
       applyContrast('standard');
+      applyDensity('comfortable');
     }
   }
   restore();
   document.addEventListener('DOMContentLoaded', () => {
+    const densitySelect = document.querySelector('#layout-density');
+    if (densitySelect) {
+      densitySelect.value = document.documentElement.dataset.density;
+      densitySelect.addEventListener('change', () => {
+        applyDensity(densitySelect.value);
+        const status = document.querySelector('#density-status');
+        try {
+          localStorage.setItem(densityKey, densitySelect.value);
+          status.textContent = 'Layout saved for this browser.';
+        } catch {
+          status.textContent =
+            'Layout applied to this page. Browser storage is unavailable, so it could not be saved.';
+        }
+      });
+    }
     const contrastSelect = document.querySelector('#contrast-preference');
     if (contrastSelect) {
       contrastSelect.value = document.documentElement.dataset.contrast;
@@ -140,6 +164,7 @@
       event.key === sizeKey ||
       event.key === motionKey ||
       event.key === contrastKey ||
+      event.key === densityKey ||
       event.key === null
     )
       restore();

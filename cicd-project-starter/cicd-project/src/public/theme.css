@@ -261,3 +261,55 @@ html[data-motion='reduce'],
 [data-contrast='high'] .feed-card .profile-cover {
   background: var(--surface);
 }
+
+#layout-density {
+  display: block;
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.8rem;
+  border-radius: 0.6rem;
+  font: inherit;
+}
+[data-density='compact'] .account-shell {
+  margin-block: 1.5rem;
+}
+[data-density='compact'] .account-card {
+  margin-top: 1.5rem;
+  padding: 1rem;
+}
+[data-density='compact'] .settings-section {
+  padding-block: 0.85rem;
+}
+[data-density='compact'] .settings-section p {
+  margin-block: 0.6rem;
+}
+[data-density='compact'] .form-content {
+  padding-block: 1.5rem;
+}
+[data-density='compact'] .intro {
+  margin-block: 0.75rem 1rem;
+}
+[data-density='compact'] .feed-page main {
+  padding-block: 1.5rem;
+}
+[data-density='compact'] .feed-grid {
+  gap: 0.65rem;
+}
+[data-density='compact'] .card-body {
+  padding: 0.75rem;
+}
+[data-density='compact'] .profile-cover {
+  min-height: 6rem;
+}
+[data-density='compact'] .discovery-panel {
+  padding: 1rem;
+}
+[data-density='compact'] .discovery-card {
+  padding-block: 0.65rem;
+}
+[data-density='compact'] button,
+[data-density='compact'] select,
+[data-density='compact'] .primary-button,
+[data-density='compact'] .manage-link {
+  min-height: 44px;
+}
