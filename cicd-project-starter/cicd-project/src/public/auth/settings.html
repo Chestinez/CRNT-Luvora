@@ -60,6 +60,17 @@
             <p id="theme-help">
               Choose the colors for Luvora. Applies immediately and is remembered in this browser.
             </p>
+            <label for="display-mode">Display mode</label>
+            <select id="display-mode" aria-describedby="mode-help">
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+              <option value="system">System</option>
+            </select>
+            <p id="mode-help">
+              System follows your device's light or dark appearance. Your website color stays
+              selected.
+            </p>
+            <p id="mode-status" role="status" aria-live="polite"></p>
             <label for="color-theme">Website color</label>
             <select id="color-theme" aria-describedby="theme-help">
               <option value="rose">Rose (default)</option>

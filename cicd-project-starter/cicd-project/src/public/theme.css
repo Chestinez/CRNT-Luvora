@@ -82,3 +82,73 @@
 [data-theme] .notice {
   background: var(--surface);
 }
+
+:root[data-theme][data-mode='light'] {
+  color-scheme: light;
+  --bg: #f6e4eb;
+  --surface: #fceff3;
+  --rose: #963550;
+  --text: #30202a;
+  --muted: #6c5362;
+  --line: #ad8c9b;
+}
+:root[data-theme='ocean'][data-mode='light'] {
+  --bg: #deedf7;
+  --surface: #ecf5fb;
+  --rose: #165b88;
+  --text: #172c3d;
+  --muted: #456479;
+  --line: #819eaf;
+}
+:root[data-theme='forest'][data-mode='light'] {
+  --bg: #e1efe4;
+  --surface: #eef7f0;
+  --rose: #24633b;
+  --text: #193324;
+  --muted: #4c6856;
+  --line: #87a590;
+}
+:root[data-theme='lavender'][data-mode='light'] {
+  --bg: #ebe2f6;
+  --surface: #f4edfb;
+  --rose: #69449b;
+  --text: #30213f;
+  --muted: #6c587e;
+  --line: #a18db5;
+}
+#display-mode {
+  display: block;
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.8rem;
+  border-radius: 0.6rem;
+  font: inherit;
+}
+[data-mode='light'] .field-error,
+[data-mode='light'] .notice[data-error='true'] {
+  color: #9b243b;
+  border-color: #9b243b;
+}
+[data-mode='light'] input[aria-invalid='true'] {
+  border-color: #9b243b;
+}
+[data-mode='light'] .password-rules li[data-met='true'],
+[data-mode='light'] .security-badge.enabled {
+  color: #24633b;
+}
+[data-mode='light'] input::placeholder {
+  color: var(--muted);
+}
+[data-mode='light'] .feed-card .profile-cover {
+  background: linear-gradient(
+    130deg,
+    var(--surface),
+    color-mix(in srgb, var(--rose) 20%, var(--bg))
+  );
+}
+[data-mode='light'] .profile-cover span,
+[data-mode='light'] .feed-tags li {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--line);
+}
