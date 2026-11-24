@@ -1,8 +1,6 @@
 'use strict';
 
-const {
-  QUESTIONS,
-} = require('../../src/data/compatibilityQuestions');
+const { QUESTIONS } = require('../../src/data/compatibilityQuestions');
 
 const {
   validateAssessment,
@@ -29,155 +27,162 @@ describe('compatibility assessment validation', () => {
 
   test('rejects an unknown question', () => {
     expect(() =>
-      validateAssessment(draft({
-        answers: { 'unknown-01': ['yes'] },
-      })),
+      validateAssessment(
+        draft({
+          answers: { 'unknown-01': ['yes'] },
+        }),
+      ),
     ).toThrow('Unknown question');
   });
 
   test('rejects an invalid option', () => {
     expect(() =>
-      validateAssessment(draft({
-        answers: { 'goals-01': ['invalid'] },
-      })),
+      validateAssessment(
+        draft({
+          answers: { 'goals-01': ['invalid'] },
+        }),
+      ),
     ).toThrow('invalid option');
   });
 
   test('rejects multiple answers for a single-choice question', () => {
     expect(() =>
-      validateAssessment(draft({
-        answers: { 'goals-01': ['serious', 'casual'] },
-      })),
+      validateAssessment(
+        draft({
+          answers: { 'goals-01': ['serious', 'casual'] },
+        }),
+      ),
     ).toThrow('between 1 and 1');
   });
 
   test('allows three interests', () => {
     expect(() =>
-      validateAssessment(draft({
-        answers: {
-          'interests-01': ['music', 'cooking', 'travel'],
-        },
-      })),
+      validateAssessment(
+        draft({
+          answers: {
+            'interests-01': ['music', 'cooking', 'travel'],
+          },
+        }),
+      ),
     ).not.toThrow();
   });
 
   test('rejects more than three interests', () => {
     expect(() =>
-      validateAssessment(draft({
-        answers: {
-          'interests-01': ['music', 'cooking', 'travel', 'gaming'],
-        },
-      })),
+      validateAssessment(
+        draft({
+          answers: {
+            'interests-01': ['music', 'cooking', 'travel', 'gaming'],
+          },
+        }),
+      ),
     ).toThrow('between 1 and 3');
   });
 
   test('rejects duplicate selections', () => {
     expect(() =>
-      validateAssessment(draft({
-        answers: { 'interests-01': ['music', 'music'] },
-      })),
+      validateAssessment(
+        draft({
+          answers: { 'interests-01': ['music', 'music'] },
+        }),
+      ),
     ).toThrow('duplicate options');
   });
 
-  test('allows skipping the optional children question', () => {
-    expect(() =>
-      validateAssessment(draft({
-        skippedQuestionIds: ['values-02'],
-      })),
-    ).not.toThrow();
+  test('contains exactly 15 required questions across five categories', () => {
+    expect(QUESTIONS).toHaveLength(15);
+    expect(QUESTIONS.every((q) => q.required)).toBe(true);
+    for (const category of new Set(QUESTIONS.map((q) => q.category))) {
+      expect(QUESTIONS.filter((q) => q.category === category)).toHaveLength(3);
+    }
   });
 
   test('rejects skipping a core question', () => {
     expect(() =>
-      validateAssessment(draft({
-        skippedQuestionIds: ['goals-01'],
-      })),
+      validateAssessment(
+        draft({
+          skippedQuestionIds: ['goals-01'],
+        }),
+      ),
     ).toThrow('core questions cannot be skipped');
   });
 
-  test('rejects answering and skipping the same question', () => {
-    expect(() =>
-      validateAssessment(draft({
-        answers: { 'values-02': ['unsure'] },
-        skippedQuestionIds: ['values-02'],
-      })),
-    ).toThrow('both answered and skipped');
+  test('rejects retired optional questions', () => {
+    expect(() => validateAssessment(draft({ answers: { 'values-02': ['unsure'] } }))).toThrow(
+      'Unknown question',
+    );
   });
 
   test('rejects incomplete completion', () => {
-    expect(() =>
-      validateAssessment(draft({ action: 'complete' })),
-    ).toThrow('Answer all 15 core questions');
+    expect(() => validateAssessment(draft({ action: 'complete' }))).toThrow(
+      'Answer all 15 core questions',
+    );
   });
 
-  test('allows completion without the five optional answers', () => {
+  test('allows completion with all 15 answers', () => {
     const answers = Object.fromEntries(
-      QUESTIONS
-        .filter((question) => question.required)
-        .map((question) => [
-          question.id,
-          [question.options[0].value],
-        ]),
+      QUESTIONS.filter((question) => question.required).map((question) => [
+        question.id,
+        [question.options[0].value],
+      ]),
     );
 
-    expect(
-      validateAssessment(draft({ action: 'complete', answers }))
-        .coreComplete,
-    ).toBe(true);
+    expect(validateAssessment(draft({ action: 'complete', answers })).coreComplete).toBe(true);
   });
 
   test('allows multiple acceptable partner options', () => {
     expect(() =>
-      validateAssessment(draft({
-        partnerPreferences: {
-          'goals-01': {
-            accepted: ['serious', 'exploring'],
-            importance: 3,
-            dealbreaker: false,
+      validateAssessment(
+        draft({
+          partnerPreferences: {
+            'goals-01': {
+              accepted: ['serious', 'exploring'],
+              importance: 3,
+              dealbreaker: false,
+            },
           },
-        },
-      })),
+        }),
+      ),
     ).not.toThrow();
   });
 
   test('rejects unsupported importance', () => {
     expect(() =>
-      validateAssessment(draft({
-        partnerPreferences: {
-          'goals-01': {
-            accepted: ['serious'],
-            importance: 2,
-            dealbreaker: false,
+      validateAssessment(
+        draft({
+          partnerPreferences: {
+            'goals-01': {
+              accepted: ['serious'],
+              importance: 2,
+              dealbreaker: false,
+            },
           },
-        },
-      })),
+        }),
+      ),
     ).toThrow('importance must be');
   });
 
   test('rejects a zero-importance dealbreaker', () => {
     expect(() =>
-      validateAssessment(draft({
-        partnerPreferences: {
-          'goals-01': {
-            accepted: ['serious'],
-            importance: 0,
-            dealbreaker: true,
+      validateAssessment(
+        draft({
+          partnerPreferences: {
+            'goals-01': {
+              accepted: ['serious'],
+              importance: 0,
+              dealbreaker: true,
+            },
           },
-        },
-      })),
+        }),
+      ),
     ).toThrow('zero importance');
   });
 
   test('rejects a client-supplied user identity', () => {
-    expect(() =>
-      validateAssessment(draft({ userId: 'someone-else' })),
-    ).toThrow('unknown field');
+    expect(() => validateAssessment(draft({ userId: 'someone-else' }))).toThrow('unknown field');
   });
 
-  test.each([0, -1, 1.5, '1', null, undefined])(
-    'rejects invalid revision %p',
-    (revision) => {
-      expect(() => validateRevision(revision)).toThrow();
-    },
-  );
+  test.each([0, -1, 1.5, '1', null, undefined])('rejects invalid revision %p', (revision) => {
+    expect(() => validateRevision(revision)).toThrow();
+  });
 });

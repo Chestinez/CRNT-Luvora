@@ -1,241 +1,217 @@
 'use strict';
-
 (() => {
-  const api = '/api/compatibility';
-  const element = (id) => document.getElementById(id);
-
+  const el = (id) => document.getElementById(id);
+  const editing = new URLSearchParams(window.location.search).get('edit') === '1';
   let questions = [];
   let categories = {};
   let assessment;
-  let answers = {};
   let index = 0;
   let busy = false;
+  let dirty = false;
+  let conflicted = false;
+  let timer;
 
   async function request(path, method = 'GET', body) {
-    const response = await fetch(`${api}${path}`, {
+    const response = await fetch(`/api/compatibility${path}`, {
       method,
       credentials: 'same-origin',
       headers: body ? { 'Content-Type': 'application/json' } : {},
       body: body ? JSON.stringify(body) : undefined,
     });
-
     const data = await response.json();
-
     if (!response.ok) {
       const error = new Error(data.error || 'The request failed.');
       error.status = response.status;
       throw error;
     }
-
     return data;
   }
-
-  function showError(error) {
-    element('notice').textContent = error.message;
-    element('retry').hidden = false;
-  }
-
   function setBusy(value) {
     busy = value;
-    element('choices').disabled = value;
-    element('back').disabled = value || index === 0;
-    element('next').disabled = value;
+    el('choices').disabled = value || conflicted;
+    el('preferences').disabled = value || conflicted;
+    el('back').disabled = value || conflicted || index === 0;
+    el('next').disabled = value || conflicted;
   }
-
+  function option(container, option, name, checked, multiple) {
+    const label = document.createElement('label');
+    label.className = 'option';
+    const input = document.createElement('input');
+    input.type = multiple ? 'checkbox' : 'radio';
+    input.name = name;
+    input.value = option.value;
+    input.checked = checked;
+    const text = document.createElement('span');
+    text.textContent = option.label;
+    label.append(input, text);
+    container.append(label);
+  }
+  function progress() {
+    el('progress').max = questions.length;
+    el('progress').value = questions.filter((q) => assessment.answers[q.id]?.length).length;
+  }
   function render(focus = false) {
-    const question = questions[index];
-
-    element('quiz').hidden = false;
-    element('finished').hidden = true;
-    element('category').textContent = categories[question.category].label;
-    element('position').textContent =
-      `Question ${index + 1} of ${questions.length}`;
-
-    element('progress').max = questions.length;
-    element('progress').value = questions.filter(
-      (item) => answers[item.id]?.length > 0,
-    ).length;
-
-    element('question').textContent = question.text;
-    element('instruction').textContent = question.maxSelections === 1
-      ? 'Choose one answer.'
-      : `Choose up to ${question.maxSelections} answers.`;
-
-    element('options').replaceChildren();
-
-    for (const option of question.options) {
-      const label = document.createElement('label');
-      label.className = 'option';
-
-      const input = document.createElement('input');
-      input.type = question.maxSelections === 1 ? 'radio' : 'checkbox';
-      input.name = 'answer';
-      input.value = option.value;
-      input.checked = (answers[question.id] || []).includes(option.value);
-
-      const text = document.createElement('span');
-      text.textContent = option.label;
-
-      label.append(input, text);
-      element('options').append(label);
-    }
-
-    element('next').textContent =
-      index === questions.length - 1 ? 'Finish and save' : 'Continue';
-
-    element('save-status').textContent =
-      'Your answer is saved when you select Continue or Back.';
-
-    setBusy(false);
-
-    if (focus) {
-      element('question').focus();
-    }
-  }
-
-  function showFinished() {
-    element('quiz').hidden = true;
-    element('finished').hidden = false;
-  }
-
-  async function load() {
-    element('loading').hidden = false;
-    element('quiz').hidden = true;
-    element('finished').hidden = true;
-    element('notice').textContent = '';
-    element('retry').hidden = true;
-
-    try {
-      const [bank, saved] = await Promise.all([
-        request('/questions'),
-        request('/assessment'),
-      ]);
-
-      questions = bank.questions.filter((question) => question.required);
-      categories = bank.categories;
-      assessment = saved.assessment;
-
-      if (!assessment) {
-        try {
-          const created = await request('/assessment', 'POST');
-          assessment = created.assessment;
-        } catch (error) {
-          // Another tab may have created the assessment while loading.
-          if (error.status !== 409) throw error;
-          assessment = (await request('/assessment')).assessment;
-        }
-      }
-
-      if (!assessment) {
-        throw new Error('Could not load your assessment. Please reload.');
-      }
-
-      if (assessment.questionnaire_version !== bank.version) {
-        throw new Error('Your saved questionnaire version is not supported.');
-      }
-
-      answers = { ...assessment.answers };
-
-      if (assessment.core_completed_at) {
-        showFinished();
-        return;
-      }
-
-      const firstUnanswered = questions.findIndex(
-        (question) => !answers[question.id]?.length,
+    const q = questions[index];
+    const preference = assessment.partner_preferences[q.id];
+    el('quiz').hidden = false;
+    el('category').textContent = categories[q.category].label;
+    el('position').textContent = `Question ${index + 1} of ${questions.length}`;
+    el('question').textContent = q.text;
+    el('instruction').textContent =
+      q.maxSelections === 1 ? 'Choose one answer.' : `Choose up to ${q.maxSelections} answers.`;
+    el('options').replaceChildren();
+    el('partner-options').replaceChildren();
+    for (const item of q.options) {
+      option(
+        el('options'),
+        item,
+        'answer',
+        (assessment.answers[q.id] || []).includes(item.value),
+        q.maxSelections > 1,
       );
-
-      index = firstUnanswered === -1 ? 0 : firstUnanswered;
-      render();
-    } catch (error) {
-      showError(error);
-    } finally {
-      element('loading').hidden = true;
+      option(
+        el('partner-options'),
+        item,
+        'partner',
+        (preference?.accepted || []).includes(item.value),
+        true,
+      );
     }
+    el('use-preference').checked = Boolean(preference);
+    el('preference-fields').hidden = !preference;
+    el('importance').value = String(preference?.importance ?? 1);
+    el('dealbreaker').checked = preference?.dealbreaker ?? false;
+    el('next').textContent = index === questions.length - 1 ? 'Finish and save' : 'Continue';
+    el('save-status').textContent = 'Answers save automatically.';
+    progress();
+    setBusy(false);
+    if (focus) el('question').focus();
   }
-
-  async function saveAndMove(direction) {
-    if (busy) return;
-
-    element('notice').textContent = '';
-    element('retry').hidden = true;
-
-    const question = questions[index];
-    const selected = Array.from(
-      element('options').querySelectorAll('input:checked'),
+  function readForm() {
+    const q = questions[index];
+    const selected = [...el('options').querySelectorAll('input:checked')].map(
       (input) => input.value,
     );
-
-    if (direction > 0 && selected.length === 0) {
-      element('notice').textContent = 'Choose an answer before continuing.';
-      return;
-    }
-
-    if (selected.length > question.maxSelections) {
-      element('notice').textContent =
-        `Choose no more than ${question.maxSelections} answers.`;
-      return;
-    }
-
-    const nextAnswers = { ...answers };
-
-    if (selected.length) {
-      nextAnswers[question.id] = selected;
-    } else {
-      delete nextAnswers[question.id];
-    }
-
-    const completing = direction > 0 && index === questions.length - 1;
-
-    setBusy(true);
-    element('save-status').textContent = 'Saving…';
-
+    if (selected.length > q.maxSelections)
+      throw new Error(`Choose no more than ${q.maxSelections} answers.`);
+    const answers = { ...assessment.answers };
+    const preferences = { ...assessment.partner_preferences };
+    if (selected.length) answers[q.id] = selected;
+    else delete answers[q.id];
+    if (el('use-preference').checked) {
+      const accepted = [...el('partner-options').querySelectorAll('input:checked')].map(
+        (input) => input.value,
+      );
+      if (!accepted.length)
+        throw new Error(
+          'Choose at least one acceptable partner answer, or turn off this preference.',
+        );
+      const importance = Number(el('importance').value);
+      const dealbreaker = el('dealbreaker').checked;
+      if (dealbreaker && importance === 0)
+        throw new Error('A dealbreaker needs at least some importance.');
+      preferences[q.id] = { accepted, importance, dealbreaker };
+    } else delete preferences[q.id];
+    return { answers, preferences, selected };
+  }
+  async function save(direction = 0) {
+    clearTimeout(timer);
+    if (busy || conflicted) return;
+    el('notice').textContent = '';
+    el('retry').hidden = true;
     try {
-      const saved = await request('/assessment', 'PUT', {
+      const form = readForm();
+      if (direction > 0 && !form.selected.length)
+        throw new Error('Choose an answer before continuing.');
+      const complete = direction > 0 && index === questions.length - 1;
+      setBusy(true);
+      el('save-status').textContent = 'Saving…';
+      const result = await request('/assessment', 'PUT', {
         revision: assessment.revision,
-        action: completing ? 'complete' : 'draft',
-        answers: nextAnswers,
-        partnerPreferences: assessment.partner_preferences,
-        skippedQuestionIds: assessment.skipped_question_ids,
+        action: complete ? 'complete' : 'draft',
+        answers: form.answers,
+        partnerPreferences: form.preferences,
+        skippedQuestionIds: [],
       });
-
-      assessment = saved.assessment;
-      answers = { ...assessment.answers };
-
-      if (completing) {
-        showFinished();
-      } else {
+      assessment = result.assessment;
+      dirty = false;
+      progress();
+      el('save-status').textContent = 'Saved.';
+      if (complete) {
+        setBusy(false);
+        window.location.assign('./enhance.html');
+      } else if (direction) {
         index += direction;
         render(true);
       }
     } catch (error) {
-      showError(error);
-      element('save-status').textContent =
-        'Not saved. Your current selection is still on this page.';
+      el('notice').textContent = error.message;
+      el('save-status').textContent = 'Not saved. Your selection is still on this page.';
+      conflicted = error.status === 409;
+      el('retry').hidden = !error.status && !conflicted;
     } finally {
       setBusy(false);
     }
   }
-
-  element('answer-form').addEventListener('submit', (event) => {
+  async function load() {
+    clearTimeout(timer);
+    conflicted = false;
+    dirty = false;
+    el('loading').hidden = false;
+    el('quiz').hidden = true;
+    el('notice').textContent = '';
+    el('retry').hidden = true;
+    try {
+      const [bank, saved] = await Promise.all([request('/questions'), request('/assessment')]);
+      questions = bank.questions;
+      categories = bank.categories;
+      assessment = saved.assessment;
+      if (!assessment) {
+        try {
+          assessment = (await request('/assessment', 'POST')).assessment;
+        } catch (error) {
+          if (error.status !== 409) throw error;
+          assessment = (await request('/assessment')).assessment;
+        }
+      }
+      if (!assessment || assessment.questionnaire_version !== bank.version)
+        throw new Error('Could not load a supported assessment.');
+      if (assessment.core_completed_at && !editing) {
+        window.location.replace('./enhance.html');
+        return;
+      }
+      const next = questions.findIndex((q) => !assessment.answers[q.id]?.length);
+      index = editing || next < 0 ? 0 : next;
+      render();
+    } catch (error) {
+      el('notice').textContent = error.message;
+      el('retry').hidden = false;
+    } finally {
+      el('loading').hidden = true;
+    }
+  }
+  el('answer-form').addEventListener('change', () => {
+    dirty = true;
+    el('preference-fields').hidden = !el('use-preference').checked;
+    el('save-status').textContent = 'Unsaved changes…';
+    clearTimeout(timer);
+    timer = setTimeout(() => save(), 600);
+  });
+  el('answer-form').addEventListener('submit', (event) => {
     event.preventDefault();
-    saveAndMove(1);
+    save(1);
   });
-
-  element('back').addEventListener('click', () => {
-    if (index > 0) saveAndMove(-1);
+  el('back').addEventListener('click', () => {
+    if (index > 0) save(-1);
   });
-
-  element('retry').addEventListener('click', () => {
-    if (window.confirm('Reload saved progress? Unsaved selections will be lost.')) {
-      load();
+  el('retry').addEventListener('click', () => {
+    if (!dirty || window.confirm('Reload saved answers? Unsaved selections will be lost.')) load();
+  });
+  window.addEventListener('beforeunload', (event) => {
+    if (dirty || busy) {
+      event.preventDefault();
+      event.returnValue = '';
     }
   });
-
-  element('edit').addEventListener('click', () => {
-    index = 0;
-    render(true);
-  });
-
   load();
 })();

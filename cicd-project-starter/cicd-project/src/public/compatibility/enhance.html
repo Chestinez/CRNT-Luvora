@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Make it more personal · Luvora</title>
+    <link rel="stylesheet" href="./compatibility.css" />
+    <script src="./enhance.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <div class="brand"><span>♡</span> Luvora</div>
+      <a href="/discovery/">Discovery</a>
+    </header>
+    <main>
+      <p id="status" role="status">Loading your progress…</p>
+      <p id="notice" role="alert"></p>
+      <button id="retry" hidden>Try again</button>
+      <section id="content" hidden>
+        <div class="eyebrow">Make it more personal</div>
+        <h1>Share what matters to you.</h1>
+        <p class="muted">
+          Your preferences help personalise discovery. Our optional MBTI-style quiz is for
+          self-reflection, not a prediction of relationship success.
+        </p>
+        <a id="core" class="choice" href="./"
+          ><strong>Complete your core preferences →</strong
+          ><span>Fifteen questions about your goals, values and everyday life.</span></a
+        >
+        <a class="choice" href="/personality/"
+          ><strong>Explore my personality →</strong
+          ><span>An optional MBTI-style quiz for self-reflection.</span></a
+        >
+        <a class="link-button primary" href="/discovery/">Start discovering →</a>
+        <p class="muted small">
+          In discovery, choose “Compatibility” to see recommendations based on completed
+          questionnaires.
+        </p>
+        <button id="delete" class="danger" type="button" hidden>
+          Delete my compatibility answers
+        </button>
+        <p class="muted small">
+          Deleting removes your questionnaire answers and partner preferences. Your account and MBTI
+          result stay unchanged.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

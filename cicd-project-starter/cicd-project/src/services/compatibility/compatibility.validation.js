@@ -1,24 +1,16 @@
 'use strict';
 
 const createError = require('http-errors');
-const {
-  QUESTIONS,
-} = require('../../data/compatibilityQuestions');
+const { QUESTIONS } = require('../../data/compatibilityQuestions');
 
-const questionsById = new Map(
-  QUESTIONS.map((question) => [question.id, question]),
-);
+const questionsById = new Map(QUESTIONS.map((question) => [question.id, question]));
 
 function fail(message) {
   throw createError(400, message);
 }
 
 function isObject(value) {
-  return (
-    value !== null &&
-    typeof value === 'object' &&
-    !Array.isArray(value)
-  );
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 function getQuestion(id) {
@@ -32,25 +24,13 @@ function getQuestion(id) {
 }
 
 function validateSelections(question, selections, maximum) {
-  if (
-    !Array.isArray(selections) ||
-    selections.length === 0 ||
-    selections.length > maximum
-  ) {
-    fail(
-      `${question.id}: choose between 1 and ${maximum} options.`,
-    );
+  if (!Array.isArray(selections) || selections.length === 0 || selections.length > maximum) {
+    fail(`${question.id}: choose between 1 and ${maximum} options.`);
   }
 
-  const allowedValues = new Set(
-    question.options.map((option) => option.value),
-  );
+  const allowedValues = new Set(question.options.map((option) => option.value));
 
-  if (
-    selections.some(
-      (value) => typeof value !== 'string' || !allowedValues.has(value),
-    )
-  ) {
+  if (selections.some((value) => typeof value !== 'string' || !allowedValues.has(value))) {
     fail(`${question.id}: an answer contains an invalid option.`);
   }
 
@@ -67,11 +47,7 @@ function validateAnswers(answers) {
   for (const [id, selections] of Object.entries(answers)) {
     const question = getQuestion(id);
 
-    validateSelections(
-      question,
-      selections,
-      question.maxSelections,
-    );
+    validateSelections(question, selections, question.maxSelections);
   }
 }
 
@@ -113,11 +89,7 @@ function validatePartnerPreferences(preferences) {
       fail(`${id}: the partner preference must be an object.`);
     }
 
-    const allowedFields = new Set([
-      'accepted',
-      'importance',
-      'dealbreaker',
-    ]);
+    const allowedFields = new Set(['accepted', 'importance', 'dealbreaker']);
 
     if (Object.keys(preference).some((key) => !allowedFields.has(key))) {
       fail(`${id}: the partner preference contains an unknown field.`);
@@ -125,11 +97,7 @@ function validatePartnerPreferences(preferences) {
 
     // Acceptable partner options can include more choices than
     // the user's own answer. For example: morning OR night.
-    validateSelections(
-      question,
-      preference.accepted,
-      question.options.length,
-    );
+    validateSelections(question, preference.accepted, question.options.length);
 
     if (![0, 1, 3].includes(preference.importance)) {
       fail(`${id}: importance must be 0, 1 or 3.`);
@@ -168,13 +136,7 @@ function validateAssessment(payload) {
     fail('The assessment contains an unknown field.');
   }
 
-  const {
-    revision,
-    action,
-    answers,
-    partnerPreferences,
-    skippedQuestionIds,
-  } = payload;
+  const { revision, action, answers, partnerPreferences, skippedQuestionIds } = payload;
 
   validateRevision(revision);
 
@@ -186,12 +148,8 @@ function validateAssessment(payload) {
   validatePartnerPreferences(partnerPreferences);
   validateSkippedQuestions(skippedQuestionIds, answers);
 
-  const missingRequiredIds = QUESTIONS
-    .filter((question) => question.required)
-    .filter(
-      (question) =>
-        !Object.prototype.hasOwnProperty.call(answers, question.id),
-    )
+  const missingRequiredIds = QUESTIONS.filter((question) => question.required)
+    .filter((question) => !Object.prototype.hasOwnProperty.call(answers, question.id))
     .map((question) => question.id);
 
   if (action === 'complete' && missingRequiredIds.length > 0) {
