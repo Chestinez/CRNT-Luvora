@@ -79,6 +79,35 @@
               <option value="lavender">Lavender</option>
             </select>
             <p id="theme-status" role="status" aria-live="polite"></p>
+            <label for="text-size">Text size</label>
+            <select id="text-size" aria-describedby="size-help">
+              <option value="default">Small</option>
+              <option value="large">Medium</option>
+              <option value="extra-large">Large</option>
+            </select>
+            <p id="size-help">
+              Adjust text across Luvora. Your browser's zoom and default font size still apply.
+            </p>
+            <p id="size-status" role="status" aria-live="polite"></p>
+            <label for="motion-preference">Reduce motion</label>
+            <select id="motion-preference" aria-describedby="motion-help">
+              <option value="system">Follow device settings</option>
+              <option value="reduce">Always reduce motion</option>
+            </select>
+            <p id="motion-help">
+              Limit animations, transitions, and smooth scrolling across Luvora.
+            </p>
+            <p id="motion-status" role="status" aria-live="polite"></p>
+            <label for="contrast-preference">Contrast</label>
+            <select id="contrast-preference" aria-describedby="contrast-help">
+              <option value="standard">Standard</option>
+              <option value="high">High contrast</option>
+            </select>
+            <p id="contrast-help">
+              Make text, borders, and keyboard focus easier to see while keeping your selected color
+              and display mode.
+            </p>
+            <p id="contrast-status" role="status" aria-live="polite"></p>
           </section>
           <section class="settings-section" aria-labelledby="privacy-heading">
             <h2 id="privacy-heading">Privacy</h2>

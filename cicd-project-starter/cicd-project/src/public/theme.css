@@ -152,3 +152,112 @@
   color: var(--text);
   border-color: var(--line);
 }
+
+:root[data-text-size='default'] {
+  font-size: 100%;
+}
+:root[data-text-size='large'] {
+  font-size: 112.5%;
+}
+:root[data-text-size='extra-large'] {
+  font-size: 125%;
+}
+#text-size {
+  display: block;
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.8rem;
+  border-radius: 0.6rem;
+  font: inherit;
+}
+[data-text-size] .feed-header {
+  flex-wrap: wrap;
+}
+[data-text-size] fieldset {
+  min-width: 0;
+}
+[data-text-size] input,
+[data-text-size] select {
+  max-width: 100%;
+}
+
+#motion-preference {
+  display: block;
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.8rem;
+  border-radius: 0.6rem;
+  font: inherit;
+}
+html[data-motion='reduce'],
+[data-motion='reduce'] *,
+[data-motion='reduce'] *::before,
+[data-motion='reduce'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  html,
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+#contrast-preference {
+  display: block;
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.8rem;
+  border-radius: 0.6rem;
+  font: inherit;
+}
+:root[data-theme][data-contrast='high'] {
+  --text: #ffffff;
+  --muted: #f0eaf5;
+  --line: #d7ccdf;
+}
+:root[data-theme][data-mode='light'][data-contrast='high'] {
+  --text: #17121c;
+  --muted: #302637;
+  --line: #514458;
+}
+[data-contrast='high'] input,
+[data-contrast='high'] select,
+[data-contrast='high'] textarea,
+[data-contrast='high'] button,
+[data-contrast='high'] .secondary-button,
+[data-contrast='high'] .manage-link {
+  border-width: 2px;
+  border-style: solid;
+  border-color: var(--line);
+}
+[data-contrast='high'] input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+[data-contrast='high'] a {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+[data-contrast='high'] :focus-visible {
+  outline: 3px solid var(--text);
+  outline-offset: 4px;
+}
+[data-contrast='high'] .feed-tags li,
+[data-contrast='high'] .profile-cover span {
+  background: var(--surface);
+  color: var(--text);
+  border: 2px solid var(--line);
+}
+[data-contrast='high'] .feed-card .profile-cover {
+  background: var(--surface);
+}

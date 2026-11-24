@@ -1,5 +1,29 @@
 (() => {
   const key = 'luvora-color-theme';
+  const contrastKey = 'luvora-high-contrast';
+  function applyContrast(value) {
+    const contrast = value === 'high' ? 'high' : 'standard';
+    document.documentElement.dataset.contrast = contrast;
+    const select = document.querySelector('#contrast-preference');
+    if (select) select.value = contrast;
+  }
+  const motionKey = 'luvora-motion-preference';
+  const motionSystem = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let motion = 'system';
+  function applyMotion(value) {
+    motion = value === 'reduce' ? 'reduce' : 'system';
+    document.documentElement.dataset.motion =
+      motion === 'reduce' || motionSystem.matches ? 'reduce' : 'normal';
+    const select = document.querySelector('#motion-preference');
+    if (select) select.value = motion;
+  }
+  const sizeKey = 'luvora-text-size';
+  function applySize(value) {
+    const size = ['default', 'large', 'extra-large'].includes(value) ? value : 'default';
+    document.documentElement.dataset.textSize = size;
+    const select = document.querySelector('#text-size');
+    if (select) select.value = size;
+  }
   const modeKey = 'luvora-display-mode';
   const system = window.matchMedia('(prefers-color-scheme: dark)');
   let mode = 'dark';
@@ -21,13 +45,64 @@
     try {
       apply(localStorage.getItem(key));
       applyMode(localStorage.getItem(modeKey));
+      applySize(localStorage.getItem(sizeKey));
+      applyMotion(localStorage.getItem(motionKey));
+      applyContrast(localStorage.getItem(contrastKey));
     } catch {
       apply('rose');
       applyMode('dark');
+      applySize('default');
+      applyMotion('system');
+      applyContrast('standard');
     }
   }
   restore();
   document.addEventListener('DOMContentLoaded', () => {
+    const contrastSelect = document.querySelector('#contrast-preference');
+    if (contrastSelect) {
+      contrastSelect.value = document.documentElement.dataset.contrast;
+      contrastSelect.addEventListener('change', () => {
+        applyContrast(contrastSelect.value);
+        const status = document.querySelector('#contrast-status');
+        try {
+          localStorage.setItem(contrastKey, contrastSelect.value);
+          status.textContent = 'Contrast preference saved for this browser.';
+        } catch {
+          status.textContent =
+            'Contrast applied to this page. Browser storage is unavailable, so it could not be saved.';
+        }
+      });
+    }
+    const motionSelect = document.querySelector('#motion-preference');
+    if (motionSelect) {
+      motionSelect.value = motion;
+      motionSelect.addEventListener('change', () => {
+        applyMotion(motionSelect.value);
+        const status = document.querySelector('#motion-status');
+        try {
+          localStorage.setItem(motionKey, motion);
+          status.textContent = 'Motion preference saved for this browser.';
+        } catch {
+          status.textContent =
+            'Motion preference applied to this page. Browser storage is unavailable, so it could not be saved.';
+        }
+      });
+    }
+    const sizeSelect = document.querySelector('#text-size');
+    if (sizeSelect) {
+      sizeSelect.value = document.documentElement.dataset.textSize;
+      sizeSelect.addEventListener('change', () => {
+        applySize(sizeSelect.value);
+        const status = document.querySelector('#size-status');
+        try {
+          localStorage.setItem(sizeKey, sizeSelect.value);
+          status.textContent = 'Text size saved for this browser.';
+        } catch {
+          status.textContent =
+            'Text size applied to this page. Browser storage is unavailable, so it could not be saved.';
+        }
+      });
+    }
     const modeSelect = document.querySelector('#display-mode');
     if (modeSelect) {
       modeSelect.value = mode;
@@ -59,10 +134,19 @@
     });
   });
   window.addEventListener('storage', (event) => {
-    if (event.key === key || event.key === modeKey || event.key === null) restore();
+    if (
+      event.key === key ||
+      event.key === modeKey ||
+      event.key === sizeKey ||
+      event.key === motionKey ||
+      event.key === contrastKey ||
+      event.key === null
+    )
+      restore();
   });
   system.addEventListener('change', () => {
     if (mode === 'system') applyMode(mode);
   });
+  motionSystem.addEventListener('change', () => applyMotion(motion));
   window.addEventListener('pageshow', restore);
 })();
