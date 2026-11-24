@@ -155,6 +155,73 @@ function createAuthRouter() {
     if (!rows[0]) throw createError(404, 'Your profile is not available yet.');
     res.json({ displayName: rows[0].display_name });
   });
+  router.get('/privacy', identify, requireMfa, async (req, res) => {
+    const rows = await supabase.request(
+      `/rest/v1/profiles?user_id=eq.${encodeURIComponent(req.user.id)}&select=is_discoverable,onboarding_completed_at`,
+      { token: readToken(req) },
+    );
+    if (!rows[0]) throw createError(404, 'Your profile is not available yet.');
+    res.json({
+      discoverable: rows[0].is_discoverable,
+      onboardingComplete: Boolean(rows[0].onboarding_completed_at),
+    });
+  });
+  router.post('/privacy', identify, requireMfa, async (req, res) => {
+    if (typeof req.body?.discoverable !== 'boolean') {
+      return res.status(400).json({ error: 'Choose whether to show your profile in Discovery.' });
+    }
+    const discoverable = req.body.discoverable;
+    const rows = await supabase.request(
+      `/rest/v1/profiles?user_id=eq.${encodeURIComponent(req.user.id)}&select=is_discoverable${discoverable ? '&onboarding_completed_at=not.is.null' : ''}`,
+      {
+        method: 'PATCH',
+        token: readToken(req),
+        body: { is_discoverable: discoverable },
+        representation: true,
+      },
+    );
+    if (!rows[0])
+      return res.status(409).json({
+        error:
+          'Your profile is unavailable or onboarding is incomplete. Reload your privacy settings.',
+      });
+    res.json({ discoverable: rows[0].is_discoverable });
+  });
+  router.get('/preferences', identify, requireMfa, async (req, res) => {
+    const rows = await supabase.request(
+      `/rest/v1/user_preferences?user_id=eq.${encodeURIComponent(req.user.id)}&select=min_age,max_age,hard_age`,
+      { token: readToken(req) },
+    );
+    if (!rows[0]) throw createError(404, 'Your preferences are not available yet.');
+    res.json(rows[0]);
+  });
+  router.post('/preferences', identify, requireMfa, async (req, res) => {
+    const { min_age, max_age, hard_age } = req.body || {};
+    if (
+      !Number.isInteger(min_age) ||
+      !Number.isInteger(max_age) ||
+      min_age < 18 ||
+      max_age > 120 ||
+      min_age > max_age ||
+      typeof hard_age !== 'boolean'
+    ) {
+      return res.status(400).json({
+        error:
+          'Choose whole ages from 18 to 120, with minimum no greater than maximum, and a strict-filter option.',
+      });
+    }
+    const rows = await supabase.request(
+      `/rest/v1/user_preferences?user_id=eq.${encodeURIComponent(req.user.id)}&select=min_age,max_age,hard_age`,
+      {
+        method: 'PATCH',
+        token: readToken(req),
+        body: { min_age, max_age, hard_age },
+        representation: true,
+      },
+    );
+    if (!rows[0]) throw createError(404, 'Your preferences are not available yet.');
+    res.json(rows[0]);
+  });
   router.post('/logout', async (req, res) => {
     const token = readToken(req);
     // Clear the browser session even if the provider is temporarily unavailable.

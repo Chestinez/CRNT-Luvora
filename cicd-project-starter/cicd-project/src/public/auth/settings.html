@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="/auth/settings.css" />
     <script src="/auth/auth.js" defer></script>
     <script src="/auth/settings.js" defer></script>
+    <script src="/auth/privacy.js" defer></script>
+    <script src="/auth/preferences.js" defer></script>
     <link rel="stylesheet" href="/theme.css" />
     <script src="/theme.js"></script>
   </head>
@@ -67,12 +69,65 @@
             </select>
             <p id="theme-status" role="status" aria-live="polite"></p>
           </section>
-          <section class="settings-section" aria-labelledby="preferences-heading">
-            <h2 id="preferences-heading">Preferences <span class="upcoming">Coming soon</span></h2>
-            <p>
-              Profile editing, discovery preferences, privacy, and notifications will be added here
-              as they become available.
+          <section class="settings-section" aria-labelledby="privacy-heading">
+            <h2 id="privacy-heading">Privacy</h2>
+            <p id="privacy-help">
+              Control whether your profile can appear in Discovery. Existing connections and
+              published stories are managed separately. Other eligibility rules still apply when
+              visibility is on.
             </p>
+            <form id="privacy-form">
+              <fieldset id="privacy-fields" disabled>
+                <legend>Profile visibility</legend>
+                <label
+                  ><input
+                    id="discoverable"
+                    type="checkbox"
+                    aria-describedby="privacy-help privacy-status"
+                  />
+                  Show my profile in Discovery</label
+                >
+                <p id="onboarding-note" hidden>
+                  Complete profile onboarding before making your profile discoverable.
+                </p>
+                <button class="secondary-button" type="submit">Save privacy settings</button>
+              </fieldset>
+            </form>
+            <button class="secondary-button" id="reload-privacy" type="button">
+              Reload privacy settings
+            </button>
+            <p id="privacy-status" role="status" aria-live="polite"></p>
+          </section>
+          <section class="settings-section" aria-labelledby="preferences-heading">
+            <h2 id="preferences-heading">Discovery preferences</h2>
+            <p>
+              Choose the age range for For You. Saved profiles and existing connections stay
+              available. Turn off the strict filter to browse all eligible ages.
+            </p>
+            <form id="preferences-form">
+              <fieldset id="preferences-fields" disabled>
+                <legend>Preferred age range</legend>
+                <p>
+                  <label for="min-age">Minimum age</label
+                  ><input id="min-age" type="number" min="18" max="120" step="1" required />
+                </p>
+                <p>
+                  <label for="max-age">Maximum age</label
+                  ><input id="max-age" type="number" min="18" max="120" step="1" required />
+                </p>
+                <p>
+                  <label
+                    ><input id="hard-age" type="checkbox" /> Only show profiles in this age
+                    range</label
+                  >
+                </p>
+                <button class="secondary-button" type="submit">Save Discovery preferences</button>
+              </fieldset>
+            </form>
+            <button class="secondary-button" id="reload-preferences" type="button">
+              Reload preferences
+            </button>
+            <p id="preferences-status" role="status" aria-live="polite"></p>
           </section>
           <section class="settings-section" aria-labelledby="session-heading">
             <h2 id="session-heading">Session</h2>

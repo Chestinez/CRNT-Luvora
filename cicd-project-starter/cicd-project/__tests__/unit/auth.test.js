@@ -294,3 +294,86 @@ test('profile requires a session', async () => {
   expect((await post('profile', { displayName: 'Name' })).status).toBe(401);
   expect(global.fetch).not.toHaveBeenCalled();
 });
+
+test('privacy requires authentication', async () => {
+  expect((await post('privacy', { discoverable: false })).status).toBe(401);
+  expect(global.fetch).not.toHaveBeenCalled();
+});
+test('privacy rejects non-boolean values without writing', async () => {
+  reply(200, user);
+  expect(
+    (
+      await post('privacy', { discoverable: 'false' }).set(
+        'Cookie',
+        'luvora_access=verified-access-token',
+      )
+    ).status,
+  ).toBe(400);
+  expect(global.fetch).toHaveBeenCalledTimes(1);
+});
+test('privacy hides only the verified profile without requiring onboarding', async () => {
+  reply(200, user);
+  reply(200, [{ is_discoverable: false }]);
+  const response = await post('privacy', { discoverable: false, user_id: 'another-user' }).set(
+    'Cookie',
+    'luvora_access=verified-access-token',
+  );
+  expect(response.status).toBe(200);
+  const [url, options] = global.fetch.mock.calls[1];
+  expect(url).toContain(user.id);
+  expect(url).not.toContain('onboarding_completed_at');
+  expect(JSON.parse(options.body)).toEqual({ is_discoverable: false });
+});
+test('privacy enabling atomically requires completed onboarding', async () => {
+  reply(200, user);
+  reply(200, []);
+  const response = await post('privacy', { discoverable: true }).set(
+    'Cookie',
+    'luvora_access=verified-access-token',
+  );
+  expect(response.status).toBe(409);
+  expect(global.fetch.mock.calls[1][0]).toContain('onboarding_completed_at=not.is.null');
+});
+test('privacy loads saved state and onboarding status', async () => {
+  reply(200, user);
+  reply(200, [{ is_discoverable: true, onboarding_completed_at: '2026-01-01' }]);
+  const response = await request(app)
+    .get('/api/auth/privacy')
+    .set('Cookie', 'luvora_access=verified-access-token');
+  expect(response.body).toEqual({ discoverable: true, onboardingComplete: true });
+});
+
+test.each([
+  [17, 50],
+  [18, 121],
+  [40, 30],
+  [18.5, 40],
+  ['18', 40],
+])('rejects invalid preference ages %s�%s', async (min_age, max_age) => {
+  reply(200, user);
+  const response = await post('preferences', { min_age, max_age, hard_age: true }).set(
+    'Cookie',
+    'luvora_access=verified-access-token',
+  );
+  expect(response.status).toBe(400);
+  expect(global.fetch).toHaveBeenCalledTimes(1);
+});
+test('saves preference boundaries only for the authenticated user', async () => {
+  const values = { min_age: 18, max_age: 120, hard_age: false };
+  reply(200, user);
+  reply(200, [values]);
+  const response = await post('preferences', { ...values, user_id: 'other' }).set(
+    'Cookie',
+    'luvora_access=verified-access-token',
+  );
+  expect(response.body).toEqual(values);
+  const [url, options] = global.fetch.mock.calls[1];
+  expect(url).toContain(user.id);
+  expect(JSON.parse(options.body)).toEqual(values);
+});
+test('preferences require authentication', async () => {
+  expect((await post('preferences', { min_age: 18, max_age: 100, hard_age: true })).status).toBe(
+    401,
+  );
+  expect(global.fetch).not.toHaveBeenCalled();
+});

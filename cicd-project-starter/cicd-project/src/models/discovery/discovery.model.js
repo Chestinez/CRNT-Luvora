@@ -9,9 +9,12 @@ function listProfiles(db, viewerId, limit) {
   return db.query(
     `SELECT ${profileFields}, saved.target_user_id IS NOT NULL AS is_saved
      FROM public.discoverable_profiles p
+     LEFT JOIN public.user_preferences preferences ON preferences.user_id = $1
      LEFT JOIN public.profile_browse_actions saved
        ON saved.viewer_id = $1 AND saved.target_user_id = p.user_id AND saved.action = 'saved'
      WHERE p.user_id <> $1
+       AND (NOT coalesce(preferences.hard_age, true)
+         OR p.age_years BETWEEN coalesce(preferences.min_age, 18) AND coalesce(preferences.max_age, 100))
        AND NOT EXISTS (
          SELECT 1 FROM public.profile_browse_actions hidden
          WHERE hidden.viewer_id = $1 AND hidden.target_user_id = p.user_id AND hidden.action = 'hidden'
