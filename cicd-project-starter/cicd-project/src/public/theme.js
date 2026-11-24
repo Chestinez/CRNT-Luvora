@@ -48,6 +48,14 @@
     const select = document.querySelector('#color-theme');
     if (select) select.value = theme;
   }
+  function applyDefaults() {
+    apply('rose');
+    applyMode('dark');
+    applySize('default');
+    applyMotion('system');
+    applyContrast('standard');
+    applyDensity('comfortable');
+  }
   function restore() {
     try {
       apply(localStorage.getItem(key));
@@ -57,16 +65,34 @@
       applyContrast(localStorage.getItem(contrastKey));
       applyDensity(localStorage.getItem(densityKey));
     } catch {
-      apply('rose');
-      applyMode('dark');
-      applySize('default');
-      applyMotion('system');
-      applyContrast('standard');
-      applyDensity('comfortable');
+      applyDefaults();
     }
   }
   restore();
   document.addEventListener('DOMContentLoaded', () => {
+    const reset = document.querySelector('#reset-appearance');
+    if (reset) {
+      const section = reset.closest('section');
+      const status = document.querySelector('#reset-status');
+      section.addEventListener('change', () => {
+        status.textContent = '';
+      });
+      reset.addEventListener('click', () => {
+        let saved = true;
+        for (const preferenceKey of [key, modeKey, sizeKey, motionKey, contrastKey, densityKey]) {
+          try {
+            localStorage.removeItem(preferenceKey);
+          } catch {
+            saved = false;
+          }
+        }
+        applyDefaults();
+        for (const message of section.querySelectorAll('[role="status"]')) message.textContent = '';
+        status.textContent = saved
+          ? 'Appearance reset to defaults for this browser.'
+          : 'Default appearance applied to this page. Browser storage is unavailable, so some saved preferences could not be reset.';
+      });
+    }
     const densitySelect = document.querySelector('#layout-density');
     if (densitySelect) {
       densitySelect.value = document.documentElement.dataset.density;
