@@ -1,0 +1,78 @@
+.security-shell {
+  max-width: 620px;
+}
+.security-shell .account-card {
+  margin-top: 2.5rem;
+}
+.security-shell h1 {
+  font-size: clamp(2.3rem, 6vw, 3rem);
+}
+.security-badge {
+  display: inline-block;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 2rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.security-badge.enabled {
+  color: #aedcc2;
+  border-color: #527b65;
+}
+.setup-steps {
+  padding-left: 1.2rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.setup-steps li {
+  margin-bottom: 0.75rem;
+  padding-left: 0.35rem;
+}
+.qr-code {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1.5rem auto;
+  padding: 10px;
+  background: white;
+  border-radius: 8px;
+}
+details {
+  margin: 1rem 0;
+  padding: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+summary {
+  cursor: pointer;
+  color: var(--rose);
+  font-size: 0.85rem;
+}
+#setup-key {
+  display: block;
+  margin-top: 0.75rem;
+  overflow-wrap: anywhere;
+  font-size: 1rem;
+  user-select: all;
+}
+#mfa-form {
+  margin-top: 1.5rem;
+}
+#code {
+  font-size: 1.5rem;
+  letter-spacing: 0.4em;
+}
+select {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+.security-links {
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+}

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Settings · Luvora</title>
+    <link rel="stylesheet" href="/auth/auth.css" />
+    <link rel="stylesheet" href="/auth/settings.css" />
+    <script src="/auth/auth.js" defer></script>
+  </head>
+  <body data-page="account">
+    <main class="account-shell settings-shell">
+      <a class="wordmark" href="/discovery/">luvora<span aria-hidden="true">✳</span></a>
+      <section class="account-card" aria-labelledby="settings-title">
+        <p class="eyebrow">Make yourself at home</p>
+        <h1 id="settings-title">Settings</h1>
+        <p class="intro">Your account, your comfort, your connections.</p>
+        <div id="form-status" class="notice" role="status" tabindex="-1">
+          Checking your session…
+        </div>
+        <div id="account-details" hidden>
+          <section class="settings-section" aria-labelledby="account-heading">
+            <h2 id="account-heading">Account</h2>
+            <p id="account-greeting"></p>
+            <p class="account-email" id="account-email"></p>
+            <a href="/auth/account.html">View your account</a>
+          </section>
+          <section class="settings-section" aria-labelledby="security-heading">
+            <h2 id="security-heading">Security</h2>
+            <p>Manage your authenticator and two-factor authentication.</p>
+            <a id="security-state" href="/auth/security.html">Account security</a>
+          </section>
+          <section class="settings-section" aria-labelledby="preferences-heading">
+            <h2 id="preferences-heading">Preferences <span class="upcoming">Coming soon</span></h2>
+            <p>
+              Profile editing, discovery preferences, privacy, and notifications will be added here
+              as they become available.
+            </p>
+          </section>
+          <section class="settings-section" aria-labelledby="session-heading">
+            <h2 id="session-heading">Session</h2>
+            <p>Log out of Luvora on this browser.</p>
+            <button class="secondary-button" id="logout" type="button">Log out</button>
+          </section>
+          <a href="/discovery/">Back to Discovery</a>
+        </div>
+        <noscript><p>Please enable JavaScript to view your settings.</p></noscript>
+      </section>
+    </main>
+  </body>
+</html>
