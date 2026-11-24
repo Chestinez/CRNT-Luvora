@@ -1,0 +1,24 @@
+name: Compatibility checks
+on:
+  pull_request:
+  push:
+    branches: [main, 'feature/**', 'feat/**']
+permissions:
+  contents: read
+jobs:
+  compatibility:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cicd-project-starter/cicd-project
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: cicd-project-starter/cicd-project/package-lock.json
+      - run: npm ci
+      - run: npm run test:unit -- --runInBand
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:compatibility:ui

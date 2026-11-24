@@ -34,7 +34,10 @@
     "lint:report": "eslint -c configs/eslint.config.mjs . --format html --output-file reports/eslint-report.html || true",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "report": "node scripts/qa-report.js"
+    "report": "node scripts/qa-report.js",
+    "test:compatibility": "jest --runInBand --testPathPatterns=__tests__/unit/compatibility",
+    "test:compatibility:ui": "playwright test --config=configs/compatibility.playwright.config.js",
+    "test:compatibility:db": "dotenv -e .env.dev -- node scripts/check-compatibility-db.cjs"
   },
   "jest": {
     "testMatch": [
