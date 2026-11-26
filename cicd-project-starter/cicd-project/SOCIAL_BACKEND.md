@@ -125,7 +125,9 @@ available to existing callers.
 ## For You learning
 
 Apply `db_Schema_Change_log/06_profile_learning/001_profile_learning.sql` after
-the Compatibility migrations. Discovery uses the profile's existing
+the Compatibility migrations, followed by `06_profile_learning/002_profile_learning_ranking.sql`.
+Applying `002` expires existing For You cursors so the next refresh computes
+the corrected order. Discovery uses the profile's existing
 `allow_behavioural_personalization` setting, which defaults to off.
 
 | Request                                                  | Behavior                                                           |
@@ -137,20 +139,28 @@ the Compatibility migrations. Discovery uses the profile's existing
 
 Each new Like or sent request captures the target's interests and numeric
 traits at the time of the action. Requests weigh `1.0` and Likes weigh `0.20`.
-The strongest action counts once per target. Unliking removes the Like's
+Each window decays both actions by age, then counts only the strongest one
+per target. A fresh Like can outweigh an older request in the short window
+while the request still leads in the long window. Unliking removes the Like's
 evidence. Hiding suppresses that target's evidence until restored. The learner
 uses actions recorded after opting in. Opens and searches carry zero weight.
 
 The 30- and 120-day windows contribute 65% and 35% of the learned estimate.
 Confidence grows with decayed evidence, distinct profiles, and distinct action
-days. Learning can supply up to 30% of each directional score before the
-harmonic mean combines the pair. Each person supplies learned evidence only
-while opted in. Displayed compatibility and score filters use stated alignment.
-With no learning evidence, For You uses the compatibility order.
+days. A window adjusts stated directional fit only when the candidate shares
+a learned trait key or interest. A window with no overlap keeps its share of
+the stated fit. Learning can supply up to 30% of each directional score before
+the harmonic mean combines the pair. Each person supplies learned evidence
+only while opted in. Displayed compatibility and score filters use stated
+alignment. With no usable learning evidence, For You uses the compatibility
+order.
 
 Refresh starts a new snapshot. Reset and opt-out clear the viewer's evidence
 and expire any For You snapshot that could have used it. Likes, hides, and
 connection records are independent of the learned evidence.
+
+Run `npm run test:sql` to verify the ranking on an isolated migrated database.
+See the [integration test setup](README.md#integration-database) for configuration.
 
 ## Connections
 

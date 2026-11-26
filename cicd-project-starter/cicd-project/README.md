@@ -54,7 +54,8 @@ This project demonstrates a CRUD web application with a complete CI/CD workflow.
 │   └── cd.yml                  # CD pipeline (deployment placeholder)
 ├── __tests__/
 │   ├── unit/                   # Jest unit tests
-│   └── integration/            # Jest + Supertest integration tests
+│   ├── integration/           # Jest + Supertest integration tests
+│   └── sql/                   # PostgreSQL profile-learning regressions
 ├── configs/
 │   ├── eslint.config.mjs       # ESLint config
 │   ├── jest-integration-setup.js
@@ -62,7 +63,9 @@ This project demonstrates a CRUD web application with a complete CI/CD workflow.
 │   └── playwright-global-setup.js
 ├── scripts/
 │   ├── qa-report.js             # Combined QA report generator
-│   ├── reset.js                # Database schema reset (reads schema.sql)
+│   ├── reset.js                # Starter table reset and seed
+│   ├── starter-schema.sql      # Person and Something tables
+│   ├── test-integration.js     # Disposable Luvora database and test runner
 │   ├── seed.js                 # Database seeding with sample data
 │   └── clean-test-results.js   # Cleanup stale test results
 ├── src/
@@ -79,7 +82,7 @@ This project demonstrates a CRUD web application with a complete CI/CD workflow.
 │       ├── index.html          # Frontend UI
 │       └── index.js            # Frontend JavaScript
 ├── e2e-tests/                  # Playwright E2E test specs
-├── schema.sql                  # Database schema (single source of truth)
+├── db_Schema_Change_log/        # Luvora schema and migrations
 ├── package.json
 └── README.md
 ```
@@ -91,7 +94,7 @@ This project demonstrates a CRUD web application with a complete CI/CD workflow.
 ### Prerequisites
 
 - **Node.js** (v22 or later)
-- **2 PostgreSQL databases** — one for development, one for testing (e.g. [Neon DB](https://neon.tech))
+- **PostgreSQL** for development and a disposable pgvector instance for [integration tests](#integration-database)
 
 ### 1. Clone the repository
 
@@ -120,11 +123,13 @@ PORT=3000
 **.env.test** (testing)
 
 ```
-DATABASE_URL=postgresql://<user>:<password>@<host>/<test-db-name>?sslmode=require
+TEST_DATABASE_URL=postgresql://<admin>:<password>@<local-host>/<maintenance-db>
+DATABASE_URL=postgresql://<user>:<password>@<host>/<playwright-test-db>
 PORT=3001
 ```
 
-> **Why two databases?** Tests reset the database before each run, so using a separate test database prevents losing your development data.
+Integration tests create their own database on the instance at `TEST_DATABASE_URL`.
+Playwright resets the starter tables on the test `DATABASE_URL`.
 
 ### 4. Set up the database
 
@@ -132,7 +137,8 @@ PORT=3001
 npm run migration:reset
 ```
 
-This reads `schema.sql` and creates the `Person` and `Something` tables.
+This resets and seeds the starter `Person` and `Something` tables. To set up
+Luvora Discovery, follow the [demo setup](luvora-demo-runner.md#prepare-supabase).
 
 ### 5. Seed sample data (optional)
 
@@ -158,10 +164,11 @@ The app runs at `http://localhost:3000` by default.
 | -------------------------- | ---------------------------------------- |
 | `npm run start`            | Start the dev server (`.env.dev`)        |
 | `npm run seed`             | Seed database with sample data           |
-| `npm run migration:reset`  | Reset database schema using `schema.sql` |
+| `npm run migration:reset`  | Reset and seed the starter tables       |
 | `npm run test`             | Run all tests (unit + integration + E2E) |
 | `npm run test:unit`        | Run unit tests only                      |
-| `npm run test:integration` | Run integration tests only               |
+| `npm run test:integration` | Run migrated SQL and HTTP integration tests |
+| `npm run test:sql`         | Run profile-learning SQL regressions     |
 | `npm run test:e2e`         | Run Playwright E2E tests                 |
 | `npm run test:trace`       | Run E2E tests with trace recording       |
 | `npm run lint`             | Run ESLint                               |
@@ -214,7 +221,9 @@ Tests each model function in isolation with a **mocked database** (`jest.mock`).
 
 #### Integration Tests (`__tests__/integration/`)
 
-Tests API endpoints against a **real database** using Supertest.
+Tests API endpoints using Supertest and runs PostgreSQL assertions for profile
+learning. The SQL suite applies the Luvora migrations in a disposable database
+and covers ranking, permissions, consent, signal decay, and cursor handling.
 
 | Technique                | Examples                                                                                 |
 | ------------------------ | ---------------------------------------------------------------------------------------- |
@@ -265,8 +274,38 @@ npm run test
 # Individual test types
 npm run test:unit
 npm run test:integration
+npm run test:sql
 npm run test:e2e
 ```
+
+### Integration database
+
+Run these commands from the folder containing `package.json`. Start a local
+PostgreSQL instance with pgvector available. For example, with Docker Desktop
+running in Linux-container mode:
+
+```powershell
+docker run --rm --name luvora-test-postgres -e POSTGRES_PASSWORD=luvora_test -p 127.0.0.1:55432:5432 -d pgvector/pgvector:pg17
+docker exec luvora-test-postgres pg_isready -U postgres
+```
+
+When PostgreSQL accepts connections, set the following in `.env.test`:
+
+```dotenv
+TEST_DATABASE_URL=postgresql://postgres:luvora_test@127.0.0.1:55432/postgres
+```
+
+Use the administrator of a disposable local instance. The runner provisions the
+minimal Auth and Storage objects needed by the migrations, including three
+non-login roles if the cluster lacks them. It creates a unique test database,
+applies the Luvora migrations in order, and drops the database after the run.
+The SQL fixtures simulate the authenticated database role and JWT claims.
+
+`npm run test:sql` runs the SQL suite only. `npm run test:integration` also
+runs the existing HTTP route suite against the disposable database. For
+`npm run test:e2e` or the full `npm test`, also set `DATABASE_URL` in `.env.test`
+to a dedicated Playwright test database and set `PORT=3001`. The Playwright
+setup resets and seeds the starter `Person` and `Something` tables there.
 
 ---
 

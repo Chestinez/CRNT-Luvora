@@ -1,5 +1,5 @@
 const { Pool } = require('pg');
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -8,23 +8,23 @@ const pool = new Pool({
 });
 
 async function reset() {
-  // Read and execute schema.sql (single source of truth for DB structure)
-  const schemaSql = fs.readFileSync(path.join(__dirname, '..', 'schema.sql'), 'utf8');
-  console.log('Resetting database schema...');
-  await pool.query(schemaSql);
-  console.log('Schema applied.');
-
-  // Close pool before running seed script
-  await pool.end();
+  // The starter routes use their own tables. Luvora is installed through its migrations.
+  try {
+    const schemaSql = fs.readFileSync(path.join(__dirname, 'starter-schema.sql'), 'utf8');
+    console.log('Resetting starter tables...');
+    await pool.query(schemaSql);
+    console.log('Starter schema applied.');
+  } finally {
+    await pool.end();
+  }
 
   console.log('Running seed...');
-  execSync('node scripts/seed.js', { stdio: 'inherit', env: process.env });
+  execFileSync(process.execPath, [path.join(__dirname, 'seed.js')], { stdio: 'inherit' });
 
   console.log('Database reset completed successfully.');
 }
 
 reset().catch((err) => {
   console.error('Reset failed:', err);
-  pool.end();
-  process.exit(1);
+  process.exitCode = 1;
 });

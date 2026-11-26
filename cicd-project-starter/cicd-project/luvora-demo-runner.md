@@ -46,7 +46,10 @@ Open each SQL file below in **SQL Editor** and run the whole file as
    It adds the two preference-fit levels and shared interests shown in Discovery.
 10. Run `db_Schema_Change_log/06_profile_learning/001_profile_learning.sql`.
     It adds the optional For You learner and its recommendation settings.
-11. In your development database, run
+11. Run `db_Schema_Change_log/06_profile_learning/002_profile_learning_ranking.sql`.
+    It applies the ranking corrections to new and existing learners. Refresh
+    For You if it was open during the migration.
+12. In your development database, run
     `db_Schema_Change_log/05_compatibility/Luvora_Compatibility_Demo_Seed.sql`.
     This optional seed adds 80 fictional profiles with varied ages, interests,
     regions, and goals. Run it directly in SQL Editor. The seed creates its
