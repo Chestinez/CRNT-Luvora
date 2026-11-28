@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Settings · Luvora</title>
+    <link rel="stylesheet" href="/auth/auth.css" />
+    <link rel="stylesheet" href="/auth/settings.css" />
+    <script src="/auth/auth.js" defer></script>
+    <script src="/auth/settings.js" defer></script>
+    <script src="/auth/privacy.js" defer></script>
+    <script src="/auth/preferences.js" defer></script>
+    <link rel="stylesheet" href="/theme.css" />
+    <script src="/theme.js"></script>
+  </head>
+  <body data-page="account">
+    <main class="account-shell settings-shell">
+      <a class="wordmark" href="/discovery/">luvora<span aria-hidden="true">✳</span></a>
+      <section class="account-card" aria-labelledby="settings-title">
+        <p class="eyebrow">Make yourself at home</p>
+        <h1 id="settings-title">Settings</h1>
+        <p class="intro">Your account, your comfort, your connections.</p>
+        <div id="form-status" class="notice" role="status" tabindex="-1">
+          Checking your session…
+        </div>
+        <div id="account-details" hidden>
+          <section class="settings-section" aria-labelledby="account-heading">
+            <h2 id="account-heading">Account</h2>
+            <p id="account-greeting"></p>
+            <p class="account-email" id="account-email"></p>
+            <a href="/auth/account.html">View your account</a>
+            <form id="profile-form">
+              <p><label for="profile-name">Profile name</label></p>
+              <input
+                id="profile-name"
+                name="displayName"
+                autocomplete="nickname"
+                required
+                disabled
+                aria-describedby="profile-help"
+              />
+              <p id="profile-help">Your Discovery profile name. Use 1–80 characters.</p>
+              <button class="secondary-button" id="save-profile" type="submit" disabled>
+                Save profile name
+              </button>
+              <button class="secondary-button" id="reload-profile" type="button">
+                Reload profile
+              </button>
+              <p id="profile-status" role="status" aria-live="polite"></p>
+            </form>
+          </section>
+          <section class="settings-section" aria-labelledby="security-heading">
+            <h2 id="security-heading">Security</h2>
+            <p>Manage your authenticator and two-factor authentication.</p>
+            <a id="security-state" href="/auth/security.html">Account security</a>
+          </section>
+          <section class="settings-section" aria-labelledby="appearance-heading">
+            <h2 id="appearance-heading">Appearance</h2>
+            <p id="theme-help">
+              Choose the colors for Luvora. Applies immediately and is remembered in this browser.
+            </p>
+            <label for="display-mode">Display mode</label>
+            <select id="display-mode" aria-describedby="mode-help">
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+              <option value="system">System</option>
+            </select>
+            <p id="mode-help">
+              System follows your device's light or dark appearance. Your website color stays
+              selected.
+            </p>
+            <p id="mode-status" role="status" aria-live="polite"></p>
+            <label for="color-theme">Website color</label>
+            <select id="color-theme" aria-describedby="theme-help">
+              <option value="rose">Rose (default)</option>
+              <option value="ocean">Ocean blue</option>
+              <option value="forest">Forest green</option>
+              <option value="lavender">Lavender</option>
+            </select>
+            <p id="theme-status" role="status" aria-live="polite"></p>
+            <label for="text-size">Text size</label>
+            <select id="text-size" aria-describedby="size-help">
+              <option value="default">Small</option>
+              <option value="large">Medium</option>
+              <option value="extra-large">Large</option>
+            </select>
+            <p id="size-help">
+              Adjust text across Luvora. Your browser's zoom and default font size still apply.
+            </p>
+            <p id="size-status" role="status" aria-live="polite"></p>
+            <label for="motion-preference">Reduce motion</label>
+            <select id="motion-preference" aria-describedby="motion-help">
+              <option value="system">Follow device settings</option>
+              <option value="reduce">Always reduce motion</option>
+            </select>
+            <p id="motion-help">
+              Limit animations, transitions, and smooth scrolling across Luvora.
+            </p>
+            <p id="motion-status" role="status" aria-live="polite"></p>
+            <label for="contrast-preference">Contrast</label>
+            <select id="contrast-preference" aria-describedby="contrast-help">
+              <option value="standard">Standard</option>
+              <option value="high">High contrast</option>
+            </select>
+            <p id="contrast-help">
+              Make text, borders, and keyboard focus easier to see while keeping your selected color
+              and display mode.
+            </p>
+            <p id="contrast-status" role="status" aria-live="polite"></p>
+            <label for="layout-density">Layout spacing</label>
+            <select id="layout-density" aria-describedby="density-help">
+              <option value="comfortable">Comfortable</option>
+              <option value="compact">Compact</option>
+            </select>
+            <p id="density-help">
+              Compact uses less space between sections and inside cards. Your text size stays the
+              same.
+            </p>
+            <p id="density-status" role="status" aria-live="polite"></p>
+            <p id="reset-help">
+              Restore Rose, Dark mode, Small text, device motion settings, Standard contrast, and
+              Comfortable spacing. Your account and Discovery settings stay unchanged.
+            </p>
+            <button
+              id="reset-appearance"
+              class="secondary-button"
+              type="button"
+              aria-describedby="reset-help"
+            >
+              Reset appearance
+            </button>
+            <p id="reset-status" role="status" aria-live="polite"></p>
+          </section>
+          <section class="settings-section" aria-labelledby="privacy-heading">
+            <h2 id="privacy-heading">Privacy</h2>
+            <p id="privacy-help">
+              Control whether your profile can appear in Discovery. Existing connections and
+              published stories are managed separately. Other eligibility rules still apply when
+              visibility is on.
+            </p>
+            <form id="privacy-form">
+              <fieldset id="privacy-fields" disabled>
+                <legend>Profile visibility</legend>
+                <label
+                  ><input
+                    id="discoverable"
+                    type="checkbox"
+                    aria-describedby="privacy-help privacy-status"
+                  />
+                  Show my profile in Discovery</label
+                >
+                <p id="onboarding-note" hidden>
+                  Complete profile onboarding before making your profile discoverable.
+                </p>
+                <button class="secondary-button" type="submit">Save privacy settings</button>
+              </fieldset>
+            </form>
+            <button class="secondary-button" id="reload-privacy" type="button">
+              Reload privacy settings
+            </button>
+            <p id="privacy-status" role="status" aria-live="polite"></p>
+          </section>
+          <section class="settings-section" aria-labelledby="preferences-heading">
+            <h2 id="preferences-heading">Discovery preferences</h2>
+            <p>
+              Choose the age range for For You. Saved profiles and existing connections stay
+              available. Turn off the strict filter to browse all eligible ages.
+            </p>
+            <form id="preferences-form">
+              <fieldset id="preferences-fields" disabled>
+                <legend>Preferred age range</legend>
+                <p>
+                  <label for="min-age">Minimum age</label
+                  ><input id="min-age" type="number" min="18" max="120" step="1" required />
+                </p>
+                <p>
+                  <label for="max-age">Maximum age</label
+                  ><input id="max-age" type="number" min="18" max="120" step="1" required />
+                </p>
+                <p>
+                  <label
+                    ><input id="hard-age" type="checkbox" /> Only show profiles in this age
+                    range</label
+                  >
+                </p>
+                <button class="secondary-button" type="submit">Save Discovery preferences</button>
+              </fieldset>
+            </form>
+            <button class="secondary-button" id="reload-preferences" type="button">
+              Reload preferences
+            </button>
+            <p id="preferences-status" role="status" aria-live="polite"></p>
+          </section>
+          <section class="settings-section" aria-labelledby="session-heading">
+            <h2 id="session-heading">Session</h2>
+            <p>Log out of Luvora on this browser.</p>
+            <button class="secondary-button" id="logout" type="button">Log out</button>
+          </section>
+          <a href="/discovery/">Back to Discovery</a>
+        </div>
+        <noscript><p>Please enable JavaScript to view your settings.</p></noscript>
+      </section>
+    </main>
+  </body>
+</html>
