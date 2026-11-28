@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'"
+    />
+    <title>Account security · Luvora</title>
+    <link rel="stylesheet" href="/auth/auth.css" />
+    <link rel="stylesheet" href="/auth/security.css" />
+    <script src="/auth/security.js" defer></script>
+  </head>
+  <body>
+    <main class="account-shell security-shell">
+      <a class="wordmark" href="/auth/account.html">luvora<span>✳</span></a>
+      <section class="account-card" aria-labelledby="security-title">
+        <p class="eyebrow">A little extra peace of mind</p>
+        <h1 id="security-title">Account security.</h1>
+        <p id="security-intro" class="intro">
+          Keep your connections personal. Add another layer of protection to your account.
+        </p>
+        <div id="security-status" class="notice" role="status" tabindex="-1">
+          Checking your security settings…
+        </div>
+        <button id="retry" class="secondary-button" type="button" hidden>
+          Reload security settings
+        </button>
+        <div id="security-content" hidden>
+          <div id="start-panel" hidden>
+            <span class="security-badge">2FA is not enabled</span>
+            <p>
+              Use an authenticator app to generate a six-digit code. Once enabled, you’ll enter a
+              code after your password each time you log in.
+            </p>
+            <p class="hint">
+              Keep access to your authenticator app or its secure backup. If you lose it, contact
+              the project team for account recovery.
+            </p>
+            <button id="start" class="primary-button" type="button">
+              Set up authenticator <span aria-hidden="true">↗</span>
+            </button>
+          </div>
+          <div id="enabled-panel" hidden>
+            <span class="security-badge enabled">Two-factor authentication is on</span>
+            <p>Your next login will need your password and an authenticator code.</p>
+            <button id="disable" class="secondary-button" type="button">
+              Remove an authenticator
+            </button>
+          </div>
+          <div id="setup-panel" hidden>
+            <ol class="setup-steps">
+              <li>Open your authenticator app and choose to add an account.</li>
+              <li>Scan this QR code, or enter the setup key below.</li>
+              <li>Enter the code from your app to finish setup.</li>
+            </ol>
+            <img
+              id="qr-code"
+              class="qr-code"
+              width="220"
+              height="220"
+              alt="Scan this QR code in your authenticator app to add Luvora"
+            />
+            <details id="manual-setup">
+              <summary>Can’t scan? Use a setup key</summary>
+              <p class="hint">Add a time-based account named Luvora with this key:</p>
+              <code id="setup-key"></code>
+              <p class="hint">Keep this key private. Anyone with it can generate your codes.</p>
+            </details>
+            <p class="hint">2FA is enabled only after you successfully verify a code.</p>
+          </div>
+          <form id="mfa-form" novalidate hidden>
+            <div id="factor-choice" class="field" hidden>
+              <label for="factor">Authenticator</label
+              ><select id="factor" name="factor"></select>
+            </div>
+            <div class="field">
+              <label for="code">Six-digit code</label
+              ><input
+                id="code"
+                name="code"
+                type="text"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                pattern="[0-9]{6}"
+                minlength="6"
+                maxlength="6"
+                placeholder="000000"
+                required
+                aria-describedby="code-hint code-error"
+              />
+              <p id="code-hint" class="hint">
+                Use the current code shown in your authenticator app.
+              </p>
+              <p id="code-error" class="field-error"></p>
+            </div>
+            <p id="disable-warning" class="notice" hidden>
+              Removing this authenticator stops its codes from working and logs you out. If it is
+              your last authenticator, 2FA will be turned off.
+            </p>
+            <button id="verify" class="primary-button" type="submit">Verify code</button>
+            <button id="cancel" class="secondary-button" type="button" hidden>Cancel setup</button>
+          </form>
+          <p id="recovery-help" class="hint" hidden>
+            Lost access to your authenticator? Use its secure backup, or contact the project team to
+            verify your identity and recover access. Your password alone cannot turn off 2FA.
+          </p>
+          <p class="security-links">
+            <a id="back-account" href="/auth/account.html">Back to account</a>
+          </p>
+          <button id="signout" class="secondary-button" type="button">Log out</button>
+        </div>
+        <noscript
+          ><p class="notice">
+            Please enable JavaScript to manage two-factor authentication.
+          </p></noscript
+        >
+      </section>
+    </main>
+  </body>
+</html>
